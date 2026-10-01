@@ -15,6 +15,7 @@ pub mod compress_explanation;
 pub mod trim_explanation;
 pub mod merge_explanation;
 pub mod extraction_explanation;
+pub mod resize_explanation;
 
 pub use convert_explanation::{
     explain_intro_line_1 as explain_convert_intro_line_1,
@@ -47,4 +48,10 @@ pub use extraction_explanation::{
     explain_outro_line as explain_extraction_outro_line,
     explain_format_list as explain_extraction_format_list,
     explain_fps_list as explain_extraction_fps_list,
+};
+pub use resize_explanation::{
+    explain_intro_line_1 as explain_resize_intro_line_1,
+    explain_intro_line_2 as explain_resize_intro_line_2,
+    explain_outro_line as explain_resize_outro_line,
+    explain_format_list as explain_resize_format_list,
 };

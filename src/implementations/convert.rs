@@ -89,13 +89,6 @@ impl ConvertCrf {
     const ALL: [ConvertCrf; 7] = [ConvertCrf::Auto, ConvertCrf::High, ConvertCrf::VeryHigh,
     ConvertCrf::Medium, ConvertCrf::Low, ConvertCrf::Trash, ConvertCrf::Meme];
 
-    pub fn label(&self) -> &'static str {
-        match self {
-            Self::Auto => "🔳 auto", Self::High => "✨ flawless", Self::VeryHigh => "✨ exceptional", Self::Medium => "💫 medium",
-            Self::Low => "📦 small", Self::Trash => "💩 unexceptional", Self::Meme => "🤡 meme"
-        }
-    }
-
     fn value(&self) -> Option<u8> {
         match self {
             Self::Auto => None, Self::High => Some(18),  Self::VeryHigh => Some(20), Self::Medium => Some(24),

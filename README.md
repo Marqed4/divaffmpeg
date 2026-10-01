@@ -61,6 +61,8 @@ DivaFFMPEG takes zero liability for whatever you point it at. Your files, your c
 
 ---
 
-<h2 align="center">License</h2>
+## License
 
-This repository is licensed under [AGPL-3.0](LICENSE)
+This project is licensed under the **AGPL-3.0 License** - see the [LICENSE](LICENSE) file for details.
+
+*This software uses libraries/binaries from [FFmpeg](https://ffmpeg.org) licensed under the [LGPLv2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) (or [GPLv2](https://www.gnu.org/licenses/gpl-2.0.html)). Source code for FFmpeg can be downloaded from the [FFmpeg website](https://ffmpeg.org/download.html).*

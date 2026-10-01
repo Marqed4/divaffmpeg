@@ -9,7 +9,6 @@ use ratatui::widgets::*;
 use crate::explanations;
 use crate::background;
 use crate::component;
-use crate::home::HomeState::Video;
 use crate::styles;
 use crate::implementations::{
     FieldSet, FfmpegJob,
@@ -18,6 +17,7 @@ use crate::implementations::{
     TrimField, TrimState,
     MergeField, MergeState,
     ExtractionField, ExtractionState,
+    ResizeField, ResizeState,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,25 +33,29 @@ pub enum VideoProcessingState {
     ExplainMerge,
     Extraction,
     ExplainExtraction,
+    Resize,
+    ExplainResize,
 }
 
 //                      <-- SELECTABLES -->
 impl VideoProcessingState {
-    const SELECTABLES: [VideoProcessingState; 6] = [
+    const SELECTABLES: [VideoProcessingState; 7] = [
         VideoProcessingState::Default,
         VideoProcessingState::Convert,
         VideoProcessingState::Compress,
         VideoProcessingState::Trim,
         VideoProcessingState::Merge,
-        VideoProcessingState::Extraction
+        VideoProcessingState::Extraction,
+        VideoProcessingState::Resize,
     ];
 
-    const EXPLANATIONS: [VideoProcessingState; 5] = [
+    const EXPLANATIONS: [VideoProcessingState; 6] = [
         VideoProcessingState::ExplainConvert,
         VideoProcessingState::ExplainCompress,
         VideoProcessingState::ExplainTrim,
         VideoProcessingState::ExplainMerge,
         VideoProcessingState::ExplainExtraction,
+        VideoProcessingState::ExplainResize,
     ];
 
     fn label(&self) -> &'static str {
@@ -67,6 +71,8 @@ impl VideoProcessingState {
             Self::ExplainMerge => "Merge Guide",
             Self::Extraction => "Frame Extraction",
             Self::ExplainExtraction => "Frame Extraction Guide",
+            Self::Resize => "   Resize   ",
+            Self::ExplainResize => "Resize Guide",
         }
     }
 }
@@ -83,11 +89,11 @@ impl DirectionsMenuState {
     }
 
     pub fn next(&mut self) {
-        self.selected_column = (self.selected_column + 1) % 5;
+        self.selected_column = (self.selected_column + 1) % 6;
     }
 
     pub fn previous(&mut self) {
-        self.selected_column = if self.selected_column == 0 { 4 } else { self.selected_column - 1 };
+        self.selected_column = if self.selected_column == 0 { 5 } else { self.selected_column - 1 };
     }
 
     pub fn above(&mut self) {
@@ -186,7 +192,8 @@ fn field_block<F: FieldSet>(field: F, focused: F, editing: bool) -> Block<'stati
 
 /// Widest tab row ("Convert Guide | Compress Guide | ...") plus a little slack.
 /// Above this width the art can climb past the tab rows without colliding.
-const TABS_RESERVED_COLS: u16 = 62;
+/// (Six equal-width columns: 82 label cols + 12 tab padding + 15 dividers = 109.)
+const TABS_RESERVED_COLS: u16 = 110;
 
 /// The art is taller than `inner[6]`, so it loses its head when it only gets
 /// that slot. Hand it the blank rows above too: always the explanation/UI band
@@ -270,6 +277,7 @@ pub fn render(
     trim_state: &mut TrimState,
     merge_state: &mut MergeState,
     extraction_state: &mut ExtractionState,
+    resize_state: &mut ResizeState,
 ) {
     let size: Rect = frame.area();
 
@@ -317,15 +325,28 @@ pub fn render(
     );
 
     //                      <-- TAB TITLES -->
+    // Each column is as wide as the wider of its two labels, with both labels
+    // centered in it, so the dividers of the two tab rows line up.
+    let col_widths: Vec<usize> = VideoProcessingState::EXPLANATIONS
+        .iter()
+        .enumerate()
+        .map(|(i, explain)| {
+            let selectable = VideoProcessingState::SELECTABLES[i + 1].label().trim().chars().count();
+            selectable.max(explain.label().trim().chars().count())
+        })
+        .collect();
+
     let selectable_titles: Vec<Line> = VideoProcessingState::SELECTABLES
         .iter()
-        .filter(|s| **s != VideoProcessingState::Default)
-        .map(|s| Line::from(s.label()))
+        .skip(1) // skip Default
+        .zip(&col_widths)
+        .map(|(s, w)| Line::from(format!("{:^w$}", s.label().trim(), w = *w)))
         .collect();
 
     let explanation_titles: Vec<Line> = VideoProcessingState::EXPLANATIONS
         .iter()
-        .map(|s| Line::from(s.label()))
+        .zip(&col_widths)
+        .map(|(s, w)| Line::from(format!("{:^w$}", s.label().trim(), w = *w)))
         .collect();
 
     //                      <-- TAB ELEMENTS -->
@@ -779,6 +800,87 @@ pub fn render(
             frame.render_widget(explanations::explain_extraction_outro_line(rows[2].width, rows[2].height), rows[2]);
             frame.render_widget(explanations::explain_extraction_format_list(explain_rows[0].width, explain_rows[0].height), explain_rows[0]);
             frame.render_widget(explanations::explain_extraction_fps_list(explain_rows[1].width, explain_rows[1].height), explain_rows[1]);
+        },
+        VideoProcessingState::Resize => {
+            resize_state.poll_job();
+
+            let rows: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(1),  // rows[0]: intro line
+                Constraint::Length(1),  // rows[1]: status line
+                Constraint::Length(1),  // rows[2]: empty/unused space
+            ])
+            .split(inner[5]);
+
+            let cols: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(60), // cols[0]: fields + progress
+                Constraint::Percentage(40), // cols[1]: art
+            ])
+            .split(inner[6]);
+
+            render_intro_and_status(
+                frame, &rows, resize_state.job(), "resizing",
+                "Fill in the fields, then focus ▶ resize and press '\x1b[38;5;205m\x1b[1mENTER\x1b[22m\x1b[39m'.",
+            );
+
+            let field_area: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),  // field_area[0]: input path (own row)
+                Constraint::Length(3),  // field_area[1]: output path (own row)
+                Constraint::Length(3),  // field_area[2]: width/height/ratio lock/run
+                Constraint::Length(3),  // field_area[3]: progress gauge
+            ])
+            .split(cols[0]);
+
+            let option_cols: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Fill(1), // width
+                Constraint::Fill(1), // height
+                Constraint::Fill(1), // ratio lock
+                Constraint::Fill(1), // run
+            ])
+            .split(field_area[2]);
+
+            let focused = resize_state.menu.focus_field();
+            let editing = resize_state.menu.editing;
+
+            render_path_field(frame, ResizeField::InputPath, focused, editing, &resize_state.input_file_path, field_area[0]);
+            render_path_field(frame, ResizeField::OutputPath, focused, editing, &resize_state.output_file_path, field_area[1]);
+
+            render_path_field(frame, ResizeField::Width, focused, editing, &resize_state.width, option_cols[0]);
+            render_path_field(frame, ResizeField::Height, focused, editing, &resize_state.height, option_cols[1]);
+            render_value_field(frame, ResizeField::Lock, focused, editing, resize_state.lock_label(), option_cols[2]);
+            render_value_field(frame, ResizeField::Run, focused, editing, ResizeField::Run.label(), option_cols[3]);
+
+            render_progress_gauge(frame, field_area[3], resize_state.job());
+        },
+        VideoProcessingState::ExplainResize => {
+            let rows: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(1),  // rows[0]: intro line 1
+                Constraint::Length(1),  // rows[1]: intro line 2
+                Constraint::Length(1),  // rows[2]: outro line
+            ])
+            .split(inner[5]);
+
+            let cols: Rc<[Rect]> = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(60), // cols[0]: resolution list
+                Constraint::Percentage(40), // cols[1]: art
+            ])
+            .split(inner[6]);
+
+            frame.render_widget(explanations::explain_resize_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_resize_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_resize_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_resize_format_list(cols[0].width, cols[0].height), cols[0]);
         },
     }
 

@@ -32,6 +32,7 @@ use implementations::{
     ConvertState, ConvertField, CompressState, CompressField,
     TrimState, TrimField, MergeState, MergeField,
     ExtractionState, ExtractionField,
+    ResizeState, ResizeField,
 };
 
 //                      <-- SCENE STATE -->
@@ -91,6 +92,8 @@ fn main() -> Result<(), io::Error> {
     let mut trim_state: TrimState = TrimState::new();
     let mut merge_state: MergeState = MergeState::new();
     let mut extraction_state: ExtractionState = ExtractionState::new();
+    let mut resize_state: ResizeState = ResizeState::new();
+    
 
     // Drain any stray input events left over from launching the process
     // (e.g. the Enter keystroke used to run the binary) so they don't
@@ -291,7 +294,17 @@ fn main() -> Result<(), io::Error> {
                 // The goal of this block is to render the portion of this TUI that displays information
                 // and control used for video processing.
                 Scene::VideoProcessing => {
-                    video::render(frame, video_state, &video_menu, &mut convert_state, &mut compress_state, &mut trim_state, &mut merge_state, &mut extraction_state);
+                    video::render(
+                        frame,
+                        video_state,
+                        &video_menu,
+                        &mut convert_state,
+                        &mut compress_state,
+                        &mut trim_state,
+                        &mut merge_state,
+                        &mut extraction_state,
+                        &mut resize_state,
+                    );
                 },
 
                 //                      <-- IMAGE PROCESSING SCENE (W.I.P.) -->
@@ -367,21 +380,23 @@ fn main() -> Result<(), io::Error> {
                         // While a text field is being edited, every key (including 'q') must be
                         // forwarded to the textarea instead of being caught by a global shortcut.
                         (Scene::VideoProcessing, _)
-                            if video_state == VideoProcessingState::Convert && convert_state.menu.editing =>
+                            if video_state == VideoProcessingState::Resize && resize_state.menu.editing =>
                         {
                             match k.code {
-                                KeyCode::Enter | KeyCode::Esc => convert_state.menu.editing = false,
+                                KeyCode::Enter | KeyCode::Esc => resize_state.menu.editing = false,
                                 KeyCode::Tab => {
-                                    match convert_state.menu.focus_field() {
-                                        ConvertField::InputPath => complete_textarea(&mut convert_state.input_file_path),
-                                        ConvertField::OutputPath => complete_textarea(&mut convert_state.output_file_path),
+                                    match resize_state.menu.focus_field() {
+                                        ResizeField::InputPath => complete_textarea(&mut resize_state.input_file_path),
+                                        ResizeField::OutputPath => complete_textarea(&mut resize_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
-                                    match convert_state.menu.focus_field() {
-                                        ConvertField::InputPath => { convert_state.input_file_path.input(Event::Key(k)); },
-                                        ConvertField::OutputPath => { convert_state.output_file_path.input(Event::Key(k)); },
+                                    match resize_state.menu.focus_field() {
+                                        ResizeField::InputPath => { resize_state.input_file_path.input(Event::Key(k)); },
+                                        ResizeField::OutputPath => { resize_state.output_file_path.input(Event::Key(k)); },
+                                        ResizeField::Width => { resize_state.width.input(Event::Key(k)); },
+                                        ResizeField::Height => { resize_state.height.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -668,6 +683,23 @@ fn main() -> Result<(), io::Error> {
                                 ExtractionField::Input | ExtractionField::OutputPath => extraction_state.menu.editing = true,
                                 ExtractionField::Run => extraction_state.start_extraction(&filename),
                                 _ => {},
+                            }
+                        },
+
+                        //                      <-- RESIZE FIELD NAVIGATION KEY EVENTS -->
+                        (Scene::VideoProcessing, KeyCode::Left) | (Scene::VideoProcessing, KeyCode::Char('a'))
+                            if video_state == VideoProcessingState::Resize => resize_state.menu.previous(),
+                        (Scene::VideoProcessing, KeyCode::Right) | (Scene::VideoProcessing, KeyCode::Char('d'))
+                            if video_state == VideoProcessingState::Resize => resize_state.menu.next(),
+                        (Scene::VideoProcessing, KeyCode::Up) | (Scene::VideoProcessing, KeyCode::Char('w'))
+                            if video_state == VideoProcessingState::Resize => resize_state.menu.previous(),
+                        (Scene::VideoProcessing, KeyCode::Down) | (Scene::VideoProcessing, KeyCode::Char('s'))
+                            if video_state == VideoProcessingState::Resize => resize_state.menu.next(),
+                        (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Resize => {
+                            match resize_state.menu.focus_field() {
+                                ResizeField::Run => resize_state.start_resize(&filename),
+                                ResizeField::Lock => resize_state.toggle_lock(),
+                                _ => resize_state.menu.editing = true,
                             }
                         },
 

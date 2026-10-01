@@ -361,6 +361,7 @@ pub fn render_diva_bottom(frame: &mut Frame, area: Rect) {
     frame.render_widget(bg, target);
 }
 
+#[expect(unused)]
 pub fn render_emo_pop_top(frame: &mut Frame, area: Rect) {
     let lines: Vec<&str> = EMO_POP_TOP.lines().filter(|l| !l.is_empty()).collect();
     let art_height: u16 = lines.len() as u16;
@@ -395,6 +396,7 @@ pub fn render_emo_pop_top(frame: &mut Frame, area: Rect) {
     frame.render_widget(bg, target);
 }
 
+#[expect(unused)]
 pub fn render_emo_pop_bottom(frame: &mut Frame, area: Rect) {
     let lines: Vec<&str> = EMO_POP_BOTTOM.lines().filter(|l| !l.is_empty()).collect();
     let art_height: u16 = lines.len() as u16;
