@@ -230,7 +230,7 @@ pub fn spawn_ffmpeg_job(args: Vec<String>, log_path: &str, job_name: &str) -> Ff
                     Err(e) => Err(e.to_string()),
                 }
             },
-            Err(e) => Err(format!("couldn't launch ffmpeg: {e}")),
+            Err(e) => Err(format!("couldn't launch ffmpeg: {e}")), // Unavailable/Absent
         };
 
         if let Ok(mut f) = OpenOptions::new().append(true).create(true).open(&log_path) {
