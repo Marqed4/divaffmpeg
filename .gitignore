@@ -4,3 +4,4 @@
 /log/*
 src/hidden.rs
 src/resources.html
+/ffmpeg.zip

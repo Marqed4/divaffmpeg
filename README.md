@@ -65,4 +65,4 @@ DivaFFMPEG takes zero liability for whatever you point it at. Your files, your c
 
 This project is licensed under the **AGPL-3.0 License** - see the [LICENSE](LICENSE) file for details.
 
-*This software uses libraries/binaries from [FFmpeg](https://ffmpeg.org) licensed under the [LGPLv2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) (or [GPLv2](https://www.gnu.org/licenses/gpl-2.0.html)). Source code for FFmpeg can be downloaded from the [FFmpeg website](https://ffmpeg.org/download.html).*
+*Release bundles include an unmodified FFmpeg build (64-bit static Windows build from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/), `full_build`, git `106616f13d`), configured with `--enable-gpl --enable-version3` and therefore licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html). FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project. DivaFFMPEG is not affiliated with or endorsed by the FFmpeg project. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license text and source code.*
