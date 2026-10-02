@@ -383,10 +383,18 @@ fn main() -> Result<(), io::Error> {
                             if video_state == VideoProcessingState::Resize && resize_state.menu.editing =>
                         {
                             match k.code {
-                                KeyCode::Enter | KeyCode::Esc => resize_state.menu.editing = false,
+                                KeyCode::Enter | KeyCode::Esc => {
+                                    resize_state.menu.editing = false;
+                                    if resize_state.menu.focus_field() == ResizeField::InputPath {
+                                        resize_state.sync_dimensions();
+                                    }
+                                },
                                 KeyCode::Tab => {
                                     match resize_state.menu.focus_field() {
-                                        ResizeField::InputPath => complete_textarea(&mut resize_state.input_file_path),
+                                        ResizeField::InputPath => {
+                                            complete_textarea(&mut resize_state.input_file_path);
+                                            resize_state.sync_dimensions();
+                                        },
                                         ResizeField::OutputPath => complete_textarea(&mut resize_state.output_file_path),
                                         _ => {},
                                     }

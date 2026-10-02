@@ -11,6 +11,21 @@ use ratatui_textarea::TextArea;
 
 /// Resolve ffmpeg binary: bundled copy next to the exe wins over PATH,
 /// so the app works standalone once shipped with an `ffmpeg` folder alongside it.
+/// Resolve ffprobe binary: it ships in the same folder as ffmpeg, so reuse
+/// whichever folder `ffmpeg_binary` picked. Without this, a machine that only has
+/// the bundled ffmpeg (nothing on PATH) can't probe, and the resize fields never auto-fill.
+/// Falls back to plain "ffprobe" on PATH if no bundled copy is found.
+pub fn ffprobe_binary() -> PathBuf {
+    let ffmpeg = ffmpeg_binary();
+    if let Some(dir) = ffmpeg.parent() {
+        let probe = dir.join("ffprobe.exe");
+        if probe.is_file() {
+            return probe;
+        }
+    }
+    PathBuf::from("ffprobe")
+}
+
 pub fn ffmpeg_binary() -> PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {

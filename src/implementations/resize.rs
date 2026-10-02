@@ -46,8 +46,10 @@ pub struct ResizeState {
 }
 
 /// Reads the first video stream's size with ffprobe (ships with ffmpeg).
+/// Uses the bundled ffprobe via `ffprobe_binary` rather than PATH, so it works
+/// standalone. Returns None if the file can't be probed (bad path, no video stream).
 fn probe_dimensions(path: &str) -> Option<(u32, u32)> {
-    let out = Command::new("ffprobe")
+    let out = Command::new(super::shared::ffprobe_binary())
         .args([
             "-v", "error", "-select_streams", "v:0",
             "-show_entries", "stream=width,height",
