@@ -2,7 +2,7 @@
 
 ## FFmpeg
 
-DivaFFMPEG calls the `ffmpeg`, `ffprobe` and `ffplay` executables as separate programs. It does not link against FFmpeg libraries.
+DivaFFMPEG calls the `ffmpeg` and `ffprobe` executables as separate programs. It does not link against FFmpeg libraries.
 
 Release archives bundle an unmodified FFmpeg build:
 

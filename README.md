@@ -49,6 +49,18 @@
 
 ---
 
+<h2 align="center">Setup</h2>
+
+DivaFFMPEG needs FFmpeg, which is too big to live in the repo. After cloning:
+
+1. Download `ffmpeg-win64.zip` from the [latest release](https://github.com/Marqed4/DivaFFMPEG/releases/latest).
+2. Unzip it into the repo root, so you end up with `ffmpeg/bin/ffmpeg.exe` and `ffmpeg/bin/ffprobe.exe`.
+3. `cargo run`
+
+Skip this if `ffmpeg` and `ffprobe` are already on your `PATH`.
+
+---
+
 <h2 align="center">Ethics</h2>
 
 DivaFFMPEG takes zero liability for whatever you point it at. Your files, your choices.
