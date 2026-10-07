@@ -59,6 +59,22 @@ DivaFFMPEG needs FFmpeg, which is too big to live in the repo. After cloning:
 
 Skip this if `ffmpeg` and `ffprobe` are already on your `PATH`.
 
+<h2 align="center">MSIX package</h2>
+
+1. `cargo build --release`
+2. `powershell -ExecutionPolicy Bypass -File installer\msixuild-msix.ps1`
+3. Output: `dist\DivaFFMPEG-0.1.0.msix` plus `dist\DivaFFMPEG.cer`
+
+The package is signed with a self-signed cert, so Windows only installs it after trusting the cert (admin PowerShell: `Import-Certificate -FilePath DivaFFMPEG.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople`), then double-click the `.msix`. It registers the `divaffmpeg` command (`divaffmpeg diva`) and a Start menu entry. For public distribution, sign with a real code-signing cert or publish via the Microsoft Store.
+
+<h2 align="center">Installer (Inno Setup, alternative)</h2>
+
+1. `cargo build --release`
+2. Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then `iscc installer\divaffmpeg.iss`
+3. Output: `dist\DivaFFMPEG-Setup-0.1.0.exe`
+
+The installer puts the app and a bundled FFmpeg in Program Files, adds Start menu (and optional desktop) shortcuts, and optionally adds it to `PATH`. Then `divaffmpeg diva` launches it from any terminal. Logs go to `%LOCALAPPDATA%\DivaFFMPEG\log`.
+
 ---
 
 <h2 align="center">Ethics</h2>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap5 desktop desktop4 rescap">
+
+  <!-- Publisher must exactly match the signing certificate subject. -->
+  <Identity Name="Marqed.DivaFFMPEG" Publisher="CN=Marqed" Version="0.1.0.0" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>DivaFFMPEG</DisplayName>
+    <PublisherDisplayName>Marqed</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="DivaFFMPEG" Executable="DivaFFMPEG.exe" EntryPoint="Windows.FullTrustApplication"
+                 desktop4:Subsystem="console" desktop4:SupportsMultipleInstances="true">
+      <uap:VisualElements
+        DisplayName="DivaFFMPEG"
+        Description="A terminal UI wrapper around ffmpeg"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- Puts `divaffmpeg` on PATH: `divaffmpeg diva` works from any terminal. -->
+        <uap5:Extension Category="windows.appExecutionAlias" Executable="DivaFFMPEG.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap5:AppExecutionAlias desktop4:Subsystem="console">
+            <uap5:ExecutionAlias Alias="divaffmpeg.exe" />
+          </uap5:AppExecutionAlias>
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
