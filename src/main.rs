@@ -49,7 +49,33 @@ enum Scene {
     Exit,
 }
 
+/// Logs live in %LOCALAPPDATA%\DivaFFMPEG\log so the app works when installed under
+/// Program Files (not writable) and regardless of the launch directory.
+fn log_dir() -> std::path::PathBuf {
+    let base = std::env::var_os("LOCALAPPDATA")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    base.join("DivaFFMPEG").join("log")
+}
+
 fn main() -> Result<(), io::Error> {
+
+    //                      <-- COMMAND LINE -->
+    // `divaffmpeg` and `divaffmpeg diva` both launch the editor.
+    match std::env::args().nth(1).as_deref() {
+        None => {}
+        Some(a) if a.eq_ignore_ascii_case("diva") => {}
+        Some("-V") | Some("--version") => {
+            println!("DivaFFMPEG {}", env!("CARGO_PKG_VERSION"));
+            return Ok(());
+        }
+        Some(_) => {
+            println!("Usage: divaffmpeg [diva]
+  diva         launch the editor (default)
+  -V, --version  print version");
+            return Ok(());
+        }
+    }
 
     //                      <-- ENABLE TERMINAL -->
     enable_raw_mode()?;
@@ -63,7 +89,11 @@ fn main() -> Result<(), io::Error> {
     //                      <-- LOGGING APPLICATION STATE -->
     // This uses the standard write and file opening crates, as well as the chrono package to
     // accurately create a .log file that can be written to during a session of this terminal application.
-    let filename: String = format!("log/DivaFFMPEG-{}.log", Utc::now().format("%Y-%m-%d_%H-%M-%S"));
+    std::fs::create_dir_all(log_dir())?;
+    let filename: String = log_dir()
+        .join(format!("DivaFFMPEG-{}.log", Utc::now().format("%Y-%m-%d_%H-%M-%S")))
+        .to_string_lossy()
+        .into_owned();
     let mut _file: File = OpenOptions::new()
         .append(true)
         .create(true)
