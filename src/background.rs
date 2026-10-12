@@ -431,55 +431,6 @@ pub fn render_emo_pop_bottom(frame: &mut Frame, area: Rect) {
     frame.render_widget(bg, target);
 }
 
-/// Renders EMO_POP as a single piece pinned to the bottom-right of `area`.
-///
-/// The art is stored in two halves because the start screen splits them across
-/// two rows with a paragraph wedged between, see the comment above
-/// `EMO_POP_BOTTOM`. Anywhere else the halves simply join back up, so this
-/// chains the two line lists and treats the result as one tall mascot. The
-/// connector line that the start screen draws separately is not needed here:
-/// `EMO_POP_TOP` already ends where `EMO_POP_BOTTOM` begins.
-///
-/// Same crop/place logic as `render_bottom_right` and `render_felix_bottom_right`,
-/// kept separate since each mascot gets its own tint.
-pub fn render_emo_pop_bottom_right(frame: &mut Frame, area: Rect) {
-    let lines: Vec<&str> = EMO_POP_TOP
-        .lines()
-        .chain(EMO_POP_BOTTOM.lines())
-        .filter(|l| !l.is_empty())
-        .collect();
-    let art_height: u16 = lines.len() as u16;
-    let art_width: u16 = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0) as u16;
-
-    let avail_height: u16 = area.height;
-    let avail_width: u16 = area.width;
-
-    let visible_lines: Vec<&str> = if art_height > avail_height {
-        let skip: usize = (art_height - avail_height) as usize;
-        lines.into_iter().skip(skip).collect()
-    } else {
-        lines
-    };
-
-    let cropped_height: u16 = visible_lines.len() as u16;
-    let render_width: u16 = art_width.min(avail_width);
-
-    let target: Rect = bottom_right_rect(render_width, cropped_height, area);
-
-    let text: Text<'_> = Text::from(
-        visible_lines
-            .into_iter()
-            .map(Line::from)
-            .collect::<Vec<_>>(),
-    );
-
-    let bg: Paragraph<'_> = Paragraph::new(text)
-        .style(Style::default().fg(Color::Rgb(170, 150, 210)))
-        .alignment(Alignment::Right);
-
-    frame.render_widget(bg, target);
-}
-
 fn bottom_centered_rect(width: u16, height: u16, area: Rect) -> Rect {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
