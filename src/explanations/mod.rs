@@ -16,6 +16,12 @@ pub mod trim_explanation;
 pub mod merge_explanation;
 pub mod extraction_explanation;
 pub mod resize_explanation;
+pub mod audio_convert_explanation;
+pub mod audio_extract_explanation;
+pub mod audio_trim_explanation;
+pub mod audio_speed_explanation;
+pub mod audio_fade_explanation;
+pub mod audio_volume_explanation;
 
 pub use convert_explanation::{
     explain_intro_line_1 as explain_convert_intro_line_1,
@@ -54,4 +60,45 @@ pub use resize_explanation::{
     explain_intro_line_2 as explain_resize_intro_line_2,
     explain_outro_line as explain_resize_outro_line,
     explain_format_list as explain_resize_format_list,
+};
+
+// Audio screens follow the same renaming scheme, with `audio_` kept in the new
+// name so an audio Convert/Trim guide can't be mistaken for the video one at the
+// call site in `audio.rs`.
+pub use audio_convert_explanation::{
+    explain_intro_line_1 as explain_audio_convert_intro_line_1,
+    explain_intro_line_2 as explain_audio_convert_intro_line_2,
+    explain_outro_line as explain_audio_convert_outro_line,
+    explain_format_list as explain_audio_convert_format_list,
+    explain_bitrate_list as explain_audio_convert_bitrate_list,
+};
+pub use audio_extract_explanation::{
+    explain_intro_line_1 as explain_audio_extract_intro_line_1,
+    explain_intro_line_2 as explain_audio_extract_intro_line_2,
+    explain_outro_line as explain_audio_extract_outro_line,
+    explain_format_list as explain_audio_extract_format_list,
+};
+pub use audio_trim_explanation::{
+    explain_intro_line_1 as explain_audio_trim_intro_line_1,
+    explain_intro_line_2 as explain_audio_trim_intro_line_2,
+    explain_outro_line as explain_audio_trim_outro_line,
+    explain_format_list as explain_audio_trim_format_list,
+};
+pub use audio_speed_explanation::{
+    explain_intro_line_1 as explain_audio_speed_intro_line_1,
+    explain_intro_line_2 as explain_audio_speed_intro_line_2,
+    explain_outro_line as explain_audio_speed_outro_line,
+    explain_format_list as explain_audio_speed_format_list,
+};
+pub use audio_fade_explanation::{
+    explain_intro_line_1 as explain_audio_fade_intro_line_1,
+    explain_intro_line_2 as explain_audio_fade_intro_line_2,
+    explain_outro_line as explain_audio_fade_outro_line,
+    explain_format_list as explain_audio_fade_format_list,
+};
+pub use audio_volume_explanation::{
+    explain_intro_line_1 as explain_audio_volume_intro_line_1,
+    explain_intro_line_2 as explain_audio_volume_intro_line_2,
+    explain_outro_line as explain_audio_volume_outro_line,
+    explain_format_list as explain_audio_volume_format_list,
 };

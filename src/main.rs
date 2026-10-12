@@ -20,6 +20,7 @@ use chrono::Utc;
 
 mod home;
 mod video;
+mod audio;
 mod styles;
 mod component;
 mod background;
@@ -28,11 +29,18 @@ mod implementations;
 
 use home::{HomeState, HomeMenuState};
 use video::{VideoProcessingState, DirectionsMenuState, complete_textarea};
+use audio::{AudioProcessingState, AudioDirectionsMenuState};
 use implementations::{
     ConvertState, ConvertField, CompressState, CompressField,
     TrimState, TrimField, MergeState, MergeField,
     ExtractionState, ExtractionField,
     ResizeState, ResizeField,
+    AudioConvertState, AudioConvertField,
+    AudioExtractState, AudioExtractField,
+    AudioTrimState, AudioTrimField,
+    AudioSpeedState, AudioSpeedField,
+    AudioFadeState, AudioFadeField,
+    AudioVolumeState, AudioVolumeField,
 };
 
 //                      <-- SCENE STATE -->
@@ -123,7 +131,17 @@ fn main() -> Result<(), io::Error> {
     let mut merge_state: MergeState = MergeState::new();
     let mut extraction_state: ExtractionState = ExtractionState::new();
     let mut resize_state: ResizeState = ResizeState::new();
-    
+
+    // Audio Processing State
+    let mut audio_state: AudioProcessingState = AudioProcessingState::Default;
+    let mut audio_menu: AudioDirectionsMenuState = AudioDirectionsMenuState::new();
+    let mut audio_convert_state: AudioConvertState = AudioConvertState::new();
+    let mut audio_extract_state: AudioExtractState = AudioExtractState::new();
+    let mut audio_trim_state: AudioTrimState = AudioTrimState::new();
+    let mut audio_speed_state: AudioSpeedState = AudioSpeedState::new();
+    let mut audio_fade_state: AudioFadeState = AudioFadeState::new();
+    let mut audio_volume_state: AudioVolumeState = AudioVolumeState::new();
+
 
     // Drain any stray input events left over from launching the process
     // (e.g. the Enter keystroke used to run the binary) so they don't
@@ -363,30 +381,21 @@ fn main() -> Result<(), io::Error> {
                     frame.render_widget(wip_text, wip_inner);
                 },
 
-                //                      <-- AUDIO PROCESSING SCENE (W.I.P.) -->
+                //                      <-- AUDIO PROCESSING SCENE -->
+                // The goal of this block is to render the portion of this TUI that displays information
+                // and control used for audio processing.
                 Scene::AudioProcessing => {
-                    let outer: Rc<[Rect]> = Layout::default()
-                        .direction(Direction::Vertical)
-                        .constraints([
-                            Constraint::Fill(1),
-                        ])
-                        .split(size);
-
-                    let wip_block = Block::default()
-                        .borders(Borders::ALL)
-                        .border_type(BorderType::Rounded)
-                        .title("✦  Diva FFMPEG: Audio Processing  ✦")
-                        .title_alignment(Alignment::Center)
-                        .bold();
-
-                    let wip_inner = wip_block.inner(outer[0]);
-                    frame.render_widget(wip_block, outer[0]);
-
-                    let wip_text = Paragraph::new(
-                        styles::title(wip_inner.width, wip_inner.height).render("Work in progress...").as_bytes().into_text().unwrap()
-                    ).alignment(Alignment::Center);
-
-                    frame.render_widget(wip_text, wip_inner);
+                    audio::render(
+                        frame,
+                        audio_state,
+                        &audio_menu,
+                        &mut audio_convert_state,
+                        &mut audio_extract_state,
+                        &mut audio_trim_state,
+                        &mut audio_speed_state,
+                        &mut audio_fade_state,
+                        &mut audio_volume_state,
+                    );
                 },
             }
         })?;
@@ -545,6 +554,161 @@ fn main() -> Result<(), io::Error> {
                             }
                         },
 
+                        //                      <-- AUDIO FIELD TEXT-EDIT KEY EVENTS -->
+                        // Same contract as the video blocks above: while a textarea is open,
+                        // every key belongs to it, including 'q', or the user would get thrown
+                        // to the exit screen halfway through typing a filename.
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Convert && audio_convert_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => audio_convert_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match audio_convert_state.menu.focus_field() {
+                                        AudioConvertField::InputPath => complete_textarea(&mut audio_convert_state.input_file_path),
+                                        AudioConvertField::OutputPath => complete_textarea(&mut audio_convert_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_convert_state.menu.focus_field() {
+                                        AudioConvertField::InputPath => { audio_convert_state.input_file_path.input(Event::Key(k)); },
+                                        AudioConvertField::OutputPath => { audio_convert_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Extract && audio_extract_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => audio_extract_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match audio_extract_state.menu.focus_field() {
+                                        AudioExtractField::InputPath => complete_textarea(&mut audio_extract_state.input_file_path),
+                                        AudioExtractField::OutputPath => complete_textarea(&mut audio_extract_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_extract_state.menu.focus_field() {
+                                        AudioExtractField::InputPath => { audio_extract_state.input_file_path.input(Event::Key(k)); },
+                                        AudioExtractField::OutputPath => { audio_extract_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Trim && audio_trim_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => {
+                                    audio_trim_state.menu.editing = false;
+                                    if audio_trim_state.menu.focus_field() == AudioTrimField::InputPath {
+                                        audio_trim_state.sync_duration();
+                                    }
+                                },
+                                KeyCode::Tab => {
+                                    match audio_trim_state.menu.focus_field() {
+                                        AudioTrimField::InputPath => complete_textarea(&mut audio_trim_state.input_file_path),
+                                        AudioTrimField::OutputPath => complete_textarea(&mut audio_trim_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_trim_state.menu.focus_field() {
+                                        AudioTrimField::InputPath => { audio_trim_state.input_file_path.input(Event::Key(k)); },
+                                        AudioTrimField::OutputPath => { audio_trim_state.output_file_path.input(Event::Key(k)); },
+                                        AudioTrimField::Start => { audio_trim_state.start_time.input(Event::Key(k)); },
+                                        AudioTrimField::End => { audio_trim_state.end_time.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Speed && audio_speed_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => audio_speed_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match audio_speed_state.menu.focus_field() {
+                                        AudioSpeedField::InputPath => complete_textarea(&mut audio_speed_state.input_file_path),
+                                        AudioSpeedField::OutputPath => complete_textarea(&mut audio_speed_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_speed_state.menu.focus_field() {
+                                        AudioSpeedField::InputPath => { audio_speed_state.input_file_path.input(Event::Key(k)); },
+                                        AudioSpeedField::OutputPath => { audio_speed_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Fade && audio_fade_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => {
+                                    audio_fade_state.menu.editing = false;
+                                    // The fade-out is measured back from the end of the track, so
+                                    // the length has to be read the moment the path is settled.
+                                    if audio_fade_state.menu.focus_field() == AudioFadeField::InputPath {
+                                        audio_fade_state.sync_duration();
+                                    }
+                                },
+                                KeyCode::Tab => {
+                                    match audio_fade_state.menu.focus_field() {
+                                        AudioFadeField::InputPath => {
+                                            complete_textarea(&mut audio_fade_state.input_file_path);
+                                            audio_fade_state.sync_duration();
+                                        },
+                                        AudioFadeField::OutputPath => complete_textarea(&mut audio_fade_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_fade_state.menu.focus_field() {
+                                        AudioFadeField::InputPath => { audio_fade_state.input_file_path.input(Event::Key(k)); },
+                                        AudioFadeField::OutputPath => { audio_fade_state.output_file_path.input(Event::Key(k)); },
+                                        AudioFadeField::FadeIn => { audio_fade_state.fade_in.input(Event::Key(k)); },
+                                        AudioFadeField::FadeOut => { audio_fade_state.fade_out.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::AudioProcessing, _)
+                            if audio_state == AudioProcessingState::Volume && audio_volume_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => audio_volume_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match audio_volume_state.menu.focus_field() {
+                                        AudioVolumeField::InputPath => complete_textarea(&mut audio_volume_state.input_file_path),
+                                        AudioVolumeField::OutputPath => complete_textarea(&mut audio_volume_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match audio_volume_state.menu.focus_field() {
+                                        AudioVolumeField::InputPath => { audio_volume_state.input_file_path.input(Event::Key(k)); },
+                                        AudioVolumeField::OutputPath => { audio_volume_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
                         //                      <-- GLOBAL EXIT KEY EVENTS -->
                         (scene, KeyCode::Char('q')) if scene != Scene::Exit => {
                             previous_scene = scene;
@@ -598,13 +762,188 @@ fn main() -> Result<(), io::Error> {
                                 current_scene, Utc::now().format("%H-%M-%S"), k.code)?;
                         },
 
+                        //                      <-- AUDIO CONVERT FIELD NAVIGATION KEY EVENTS -->
+                        // Mirrors the video Convert arms below: A/D walk focus across the row,
+                        // W/S cycle the focused field's value (or step off a path field, which
+                        // has nothing to cycle), ENTER opens a path or runs ffmpeg.
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Convert => audio_convert_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Convert => audio_convert_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Convert => {
+                                match audio_convert_state.menu.focus_field() {
+                                    AudioConvertField::InputPath | AudioConvertField::OutputPath => audio_convert_state.menu.previous(),
+                                    _ => audio_convert_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Convert => {
+                                match audio_convert_state.menu.focus_field() {
+                                    AudioConvertField::InputPath | AudioConvertField::OutputPath => audio_convert_state.menu.next(),
+                                    _ => audio_convert_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Convert => {
+                            match audio_convert_state.menu.focus_field() {
+                                AudioConvertField::InputPath | AudioConvertField::OutputPath => audio_convert_state.menu.editing = true,
+                                AudioConvertField::Run => audio_convert_state.start_convert(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        //                      <-- AUDIO EXTRACT FIELD NAVIGATION KEY EVENTS -->
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Extract => audio_extract_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Extract => audio_extract_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Extract => {
+                                match audio_extract_state.menu.focus_field() {
+                                    AudioExtractField::InputPath | AudioExtractField::OutputPath => audio_extract_state.menu.previous(),
+                                    _ => audio_extract_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Extract => {
+                                match audio_extract_state.menu.focus_field() {
+                                    AudioExtractField::InputPath | AudioExtractField::OutputPath => audio_extract_state.menu.next(),
+                                    _ => audio_extract_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Extract => {
+                            match audio_extract_state.menu.focus_field() {
+                                AudioExtractField::InputPath | AudioExtractField::OutputPath => audio_extract_state.menu.editing = true,
+                                AudioExtractField::Run => audio_extract_state.start_extraction(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        //                      <-- AUDIO TRIM FIELD NAVIGATION KEY EVENTS -->
+                        // Every non-Run field here is typed rather than cycled, so W/S just
+                        // walk the row the same way A/D do, exactly like video Trim.
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Trim => audio_trim_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Trim => audio_trim_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Trim => audio_trim_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Trim => audio_trim_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Trim => {
+                            match audio_trim_state.menu.focus_field() {
+                                AudioTrimField::Run => audio_trim_state.start_trim(&filename),
+                                _ => audio_trim_state.menu.editing = true,
+                            }
+                        },
+
+                        //                      <-- AUDIO SPEED FIELD NAVIGATION KEY EVENTS -->
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Speed => audio_speed_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Speed => audio_speed_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Speed => {
+                                match audio_speed_state.menu.focus_field() {
+                                    AudioSpeedField::InputPath | AudioSpeedField::OutputPath => audio_speed_state.menu.previous(),
+                                    _ => audio_speed_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Speed => {
+                                match audio_speed_state.menu.focus_field() {
+                                    AudioSpeedField::InputPath | AudioSpeedField::OutputPath => audio_speed_state.menu.next(),
+                                    _ => audio_speed_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Speed => {
+                            match audio_speed_state.menu.focus_field() {
+                                AudioSpeedField::InputPath | AudioSpeedField::OutputPath => audio_speed_state.menu.editing = true,
+                                AudioSpeedField::Run => audio_speed_state.start_respeed(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        //                      <-- AUDIO FADE FIELD NAVIGATION KEY EVENTS -->
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Fade => audio_fade_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Fade => audio_fade_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Fade => {
+                                match audio_fade_state.menu.focus_field() {
+                                    AudioFadeField::Format => audio_fade_state.cycle_value(true),
+                                    _ => audio_fade_state.menu.previous(),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Fade => {
+                                match audio_fade_state.menu.focus_field() {
+                                    AudioFadeField::Format => audio_fade_state.cycle_value(false),
+                                    _ => audio_fade_state.menu.next(),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Fade => {
+                            match audio_fade_state.menu.focus_field() {
+                                AudioFadeField::Run => audio_fade_state.start_fade(&filename),
+                                AudioFadeField::Format => {},
+                                _ => audio_fade_state.menu.editing = true,
+                            }
+                        },
+
+                        //                      <-- AUDIO VOLUME FIELD NAVIGATION KEY EVENTS -->
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a'))
+                            if audio_state == AudioProcessingState::Volume => audio_volume_state.menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d'))
+                            if audio_state == AudioProcessingState::Volume => audio_volume_state.menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w'))
+                            if audio_state == AudioProcessingState::Volume => {
+                                match audio_volume_state.menu.focus_field() {
+                                    AudioVolumeField::InputPath | AudioVolumeField::OutputPath => audio_volume_state.menu.previous(),
+                                    _ => audio_volume_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s'))
+                            if audio_state == AudioProcessingState::Volume => {
+                                match audio_volume_state.menu.focus_field() {
+                                    AudioVolumeField::InputPath | AudioVolumeField::OutputPath => audio_volume_state.menu.next(),
+                                    _ => audio_volume_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::AudioProcessing, KeyCode::Enter) if audio_state == AudioProcessingState::Volume => {
+                            match audio_volume_state.menu.focus_field() {
+                                AudioVolumeField::InputPath | AudioVolumeField::OutputPath => audio_volume_state.menu.editing = true,
+                                AudioVolumeField::Run => audio_volume_state.start_volume(&filename),
+                                _ => {},
+                            }
+                        },
+
                         //                      <-- AUDIO PROCESSING SCENE KEY EVENTS -->
-                        (Scene::AudioProcessing, KeyCode::Esc) => {
-                            // PLACE THE AUDIO_PROCESSING STATE HERE
-                            current_scene = Scene::Home;
-                            
+                        // The catch-all arms: these only get reached while no individual audio
+                        // screen is open, i.e. while the user is still picking one off the tabs.
+                        (Scene::AudioProcessing, KeyCode::Left) | (Scene::AudioProcessing, KeyCode::Char('a')) => audio_menu.previous(),
+                        (Scene::AudioProcessing, KeyCode::Right) | (Scene::AudioProcessing, KeyCode::Char('d')) => audio_menu.next(),
+                        (Scene::AudioProcessing, KeyCode::Up) | (Scene::AudioProcessing, KeyCode::Char('w')) => audio_menu.above(),
+                        (Scene::AudioProcessing, KeyCode::Down) | (Scene::AudioProcessing, KeyCode::Char('s')) => audio_menu.below(),
+                        (Scene::AudioProcessing, KeyCode::Enter) => {
+                            audio_state = audio_menu.selected_state();
+                            previous_scene = Scene::AudioProcessing;
+
                             writeln!(_file, "State: '{:?}' at {} showing {:?} because '{:?}' was pressed.",
-                                current_scene, Utc::now().format("%H-%M-%S"), video_menu, k.code)?;
+                                current_scene, Utc::now().format("%H-%M-%S"), audio_menu, k.code)?;
+                        },
+
+                        (Scene::AudioProcessing, KeyCode::Esc) => {
+                            // First ESC backs out of whichever audio screen is open, a second
+                            // one leaves the scene entirely, same as Video.
+                            if audio_state != AudioProcessingState::Default {
+                                audio_state = AudioProcessingState::Default;
+                            } else {
+                                current_scene = Scene::Home;
+                            }
+
+                            writeln!(_file, "State: '{:?}' at {} showing {:?} because '{:?}' was pressed.",
+                                current_scene, Utc::now().format("%H-%M-%S"), audio_menu, k.code)?;
                         },
 
                         //                      <-- CONVERT FIELD NAVIGATION KEY EVENTS -->
