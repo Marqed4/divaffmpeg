@@ -173,7 +173,11 @@ pub fn complete_textarea(text_area: &mut TextArea<'static>) {
 }
 
 //                      <-- SHARED RENDER HELPERS -->
-fn field_block<F: FieldSet>(field: F, focused: F, editing: bool) -> Block<'static> {
+// These started out private to this file, back when Video was the only scene with
+// fields to draw. Audio draws the exact same furniture (bordered field, value box,
+// slider, intro/status pair, progress gauge), so they're `pub(crate)` now and
+// `audio.rs` imports them rather than keeping a second copy that would drift.
+pub(crate) fn field_block<F: FieldSet>(field: F, focused: F, editing: bool) -> Block<'static> {
     let focused_here = focused == field;
     let style = if focused_here && editing {
         Style::default().fg(Color::Rgb(255, 133, 200)).add_modifier(Modifier::BOLD | Modifier::REVERSED)
@@ -200,7 +204,7 @@ const TABS_RESERVED_COLS: u16 = 110;
 /// (`inner[5]`), and on wide terminals the gap + tab rows as well, since the
 /// tabs never reach that far right. The rect the art actually draws into stays
 /// art-width and right-aligned, so nothing on the left is overwritten.
-fn art_area(inner: &[Rect]) -> Rect {
+pub(crate) fn art_area(inner: &[Rect]) -> Rect {
     let top: Rect = if inner[6].width >= TABS_RESERVED_COLS + 34 { inner[2] } else { inner[5] };
     let bottom: Rect = inner[6];
 
@@ -212,14 +216,14 @@ fn art_area(inner: &[Rect]) -> Rect {
     }
 }
 
-fn render_path_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, text_area: &TextArea<'static>, area: Rect) {
+pub(crate) fn render_path_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, text_area: &TextArea<'static>, area: Rect) {
     let block = field_block(field, focused, editing);
     let inner = block.inner(area);
     frame.render_widget(block, area);
     frame.render_widget(text_area, inner);
 }
 
-fn render_value_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, value: &str, area: Rect) {
+pub(crate) fn render_value_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, value: &str, area: Rect) {
     let block = field_block(field, focused, editing);
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -231,7 +235,7 @@ fn render_value_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, 
 
 /// Draws a field as a filled bar instead of a static label, for values picked
 /// off a continuous range (compress's CRF slider) rather than a fixed list.
-fn render_slider_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, ratio: f64, label: String, area: Rect) {
+pub(crate) fn render_slider_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F, editing: bool, ratio: f64, label: String, area: Rect) {
     let block = field_block(field, focused, editing);
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -242,7 +246,7 @@ fn render_slider_field<F: FieldSet>(frame: &mut Frame<'_>, field: F, focused: F,
     frame.render_widget(gauge, inner);
 }
 
-fn render_intro_and_status(frame: &mut Frame<'_>, rows: &[Rect], job: Option<&FfmpegJob>, verb: &str, idle_msg: &str) {
+pub(crate) fn render_intro_and_status(frame: &mut Frame<'_>, rows: &[Rect], job: Option<&FfmpegJob>, verb: &str, idle_msg: &str) {
     let intro_text = "'\x1b[38;5;218m\x1b[1mWASD\x1b[22m\x1b[39m'/arrow-key equivalents to move between fields below \u{2022} '\x1b[38;5;218m\x1b[1mA\x1b[22m\x1b[39m'/'\x1b[38;5;218m\x1b[1mleft arrow-key\x1b[22m\x1b[39m' changes focus, W/S cycles a value \u{2022} '\x1b[38;5;205m\x1b[1mENTER\x1b[22m\x1b[39m' EDITS PATH or runs the job.";
     frame.render_widget(
         Paragraph::new(styles::left_directions(rows[0].width, rows[0].height).render(intro_text).as_bytes().into_text().unwrap()),
@@ -259,7 +263,7 @@ fn render_intro_and_status(frame: &mut Frame<'_>, rows: &[Rect], job: Option<&Ff
     );
 }
 
-fn render_progress_gauge(frame: &mut Frame<'_>, area: Rect, job: Option<&FfmpegJob>) {
+pub(crate) fn render_progress_gauge(frame: &mut Frame<'_>, area: Rect, job: Option<&FfmpegJob>) {
     let ratio = job.map(|j| j.ratio()).unwrap_or(0.0);
     let gauge = Gauge::default()
         .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("♡ progress ♡"))
