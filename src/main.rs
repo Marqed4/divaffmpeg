@@ -21,6 +21,7 @@ use chrono::Utc;
 mod home;
 mod video;
 mod audio;
+mod image;
 mod styles;
 mod component;
 mod background;
@@ -30,6 +31,7 @@ mod implementations;
 use home::{HomeState, HomeMenuState};
 use video::{VideoProcessingState, DirectionsMenuState, complete_textarea};
 use audio::{AudioProcessingState, AudioDirectionsMenuState};
+use image::{ImageProcessingState, ImageDirectionsMenuState};
 use implementations::{
     ConvertState, ConvertField, CompressState, CompressField,
     TrimState, TrimField, MergeState, MergeField,
@@ -41,6 +43,12 @@ use implementations::{
     AudioSpeedState, AudioSpeedField,
     AudioFadeState, AudioFadeField,
     AudioVolumeState, AudioVolumeField,
+    ImageConvertState, ImageConvertField,
+    ImageResizeState, ImageResizeField,
+    ImageCompressState, ImageCompressField,
+    ImageCropState, ImageCropField,
+    ImageRotateState, ImageRotateField,
+    ImageFilterState, ImageFilterField,
 };
 
 //                      <-- SCENE STATE -->
@@ -51,9 +59,9 @@ use implementations::{
 enum Scene {
     Start,
     Home,
-    ImageProcessing, // W.I.P.
+    ImageProcessing,
     VideoProcessing, 
-    AudioProcessing, // W.I.P.
+    AudioProcessing,
     Exit,
 }
 
@@ -141,6 +149,16 @@ fn main() -> Result<(), io::Error> {
     let mut audio_speed_state: AudioSpeedState = AudioSpeedState::new();
     let mut audio_fade_state: AudioFadeState = AudioFadeState::new();
     let mut audio_volume_state: AudioVolumeState = AudioVolumeState::new();
+
+    // Image Processing State
+    let mut image_state: ImageProcessingState = ImageProcessingState::Default;
+    let mut image_menu: ImageDirectionsMenuState = ImageDirectionsMenuState::new();
+    let mut image_convert_state: ImageConvertState = ImageConvertState::new();
+    let mut image_resize_state: ImageResizeState = ImageResizeState::new();
+    let mut image_compress_state: ImageCompressState = ImageCompressState::new();
+    let mut image_crop_state: ImageCropState = ImageCropState::new();
+    let mut image_rotate_state: ImageRotateState = ImageRotateState::new();
+    let mut image_filter_state: ImageFilterState = ImageFilterState::new();
 
 
     // Drain any stray input events left over from launching the process
@@ -355,30 +373,21 @@ fn main() -> Result<(), io::Error> {
                     );
                 },
 
-                //                      <-- IMAGE PROCESSING SCENE (W.I.P.) -->
+                //                      <-- IMAGE PROCESSING SCENE -->
+                // The goal of this block is to render the portion of this TUI that displays information
+                // and control used for image processing.
                 Scene::ImageProcessing => {
-                    let outer: Rc<[Rect]> = Layout::default()
-                        .direction(Direction::Vertical)
-                        .constraints([
-                            Constraint::Fill(1),
-                        ])
-                        .split(size);
-
-                    let wip_block = Block::default()
-                        .borders(Borders::ALL)
-                        .border_type(BorderType::Rounded)
-                        .title("✦  Diva FFMPEG: Image Processing  ✦")
-                        .title_alignment(Alignment::Center)
-                        .bold();
-
-                    let wip_inner = wip_block.inner(outer[0]);
-                    frame.render_widget(wip_block, outer[0]);
-
-                    let wip_text = Paragraph::new(
-                        styles::title(wip_inner.width, wip_inner.height).render("Work in progress...").as_bytes().into_text().unwrap()
-                    ).alignment(Alignment::Center);
-
-                    frame.render_widget(wip_text, wip_inner);
+                    image::render(
+                        frame,
+                        image_state,
+                        &image_menu,
+                        &mut image_convert_state,
+                        &mut image_resize_state,
+                        &mut image_compress_state,
+                        &mut image_crop_state,
+                        &mut image_rotate_state,
+                        &mut image_filter_state,
+                    );
                 },
 
                 //                      <-- AUDIO PROCESSING SCENE -->
@@ -709,6 +718,147 @@ fn main() -> Result<(), io::Error> {
                             }
                         },
 
+                        //                      <-- IMAGE FIELD TEXT-EDIT KEY EVENTS -->
+                        // Same contract as the video and audio blocks: while a textarea is open,
+                        // every key belongs to it, including 'q'.
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Convert && image_convert_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_convert_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_convert_state.menu.focus_field() {
+                                        ImageConvertField::InputPath => complete_textarea(&mut image_convert_state.input_file_path),
+                                        ImageConvertField::OutputPath => complete_textarea(&mut image_convert_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_convert_state.menu.focus_field() {
+                                        ImageConvertField::InputPath => { image_convert_state.input_file_path.input(Event::Key(k)); },
+                                        ImageConvertField::OutputPath => { image_convert_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Resize && image_resize_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_resize_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_resize_state.menu.focus_field() {
+                                        ImageResizeField::InputPath => complete_textarea(&mut image_resize_state.input_file_path),
+                                        ImageResizeField::OutputPath => complete_textarea(&mut image_resize_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_resize_state.menu.focus_field() {
+                                        ImageResizeField::InputPath => { image_resize_state.input_file_path.input(Event::Key(k)); },
+                                        ImageResizeField::OutputPath => { image_resize_state.output_file_path.input(Event::Key(k)); },
+                                        ImageResizeField::Width => { image_resize_state.width.input(Event::Key(k)); },
+                                        ImageResizeField::Height => { image_resize_state.height.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Compress && image_compress_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_compress_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_compress_state.menu.focus_field() {
+                                        ImageCompressField::InputPath => complete_textarea(&mut image_compress_state.input_file_path),
+                                        ImageCompressField::OutputPath => complete_textarea(&mut image_compress_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_compress_state.menu.focus_field() {
+                                        ImageCompressField::InputPath => { image_compress_state.input_file_path.input(Event::Key(k)); },
+                                        ImageCompressField::OutputPath => { image_compress_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Crop && image_crop_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_crop_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_crop_state.menu.focus_field() {
+                                        ImageCropField::InputPath => complete_textarea(&mut image_crop_state.input_file_path),
+                                        ImageCropField::OutputPath => complete_textarea(&mut image_crop_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_crop_state.menu.focus_field() {
+                                        ImageCropField::InputPath => { image_crop_state.input_file_path.input(Event::Key(k)); },
+                                        ImageCropField::OutputPath => { image_crop_state.output_file_path.input(Event::Key(k)); },
+                                        ImageCropField::X => { image_crop_state.x.input(Event::Key(k)); },
+                                        ImageCropField::Y => { image_crop_state.y.input(Event::Key(k)); },
+                                        ImageCropField::Width => { image_crop_state.width.input(Event::Key(k)); },
+                                        ImageCropField::Height => { image_crop_state.height.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Rotate && image_rotate_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_rotate_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_rotate_state.menu.focus_field() {
+                                        ImageRotateField::InputPath => complete_textarea(&mut image_rotate_state.input_file_path),
+                                        ImageRotateField::OutputPath => complete_textarea(&mut image_rotate_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_rotate_state.menu.focus_field() {
+                                        ImageRotateField::InputPath => { image_rotate_state.input_file_path.input(Event::Key(k)); },
+                                        ImageRotateField::OutputPath => { image_rotate_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
+                        (Scene::ImageProcessing, _)
+                            if image_state == ImageProcessingState::Filter && image_filter_state.menu.editing =>
+                        {
+                            match k.code {
+                                KeyCode::Enter | KeyCode::Esc => image_filter_state.menu.editing = false,
+                                KeyCode::Tab => {
+                                    match image_filter_state.menu.focus_field() {
+                                        ImageFilterField::InputPath => complete_textarea(&mut image_filter_state.input_file_path),
+                                        ImageFilterField::OutputPath => complete_textarea(&mut image_filter_state.output_file_path),
+                                        _ => {},
+                                    }
+                                },
+                                _ => {
+                                    match image_filter_state.menu.focus_field() {
+                                        ImageFilterField::InputPath => { image_filter_state.input_file_path.input(Event::Key(k)); },
+                                        ImageFilterField::OutputPath => { image_filter_state.output_file_path.input(Event::Key(k)); },
+                                        _ => {},
+                                    }
+                                },
+                            }
+                        },
+
                         //                      <-- GLOBAL EXIT KEY EVENTS -->
                         (scene, KeyCode::Char('q')) if scene != Scene::Exit => {
                             previous_scene = scene;
@@ -749,9 +899,7 @@ fn main() -> Result<(), io::Error> {
                         (Scene::Home, KeyCode::Enter) => {
                             home_state = home_menu.selected_state();
 
-                            // Image and audio scenes are still W.I.P. placeholders, but they're
-                            // still reachable so their in-progress layouts can be seen and iterated on.
-                            current_scene = match home_state {
+                                                        current_scene = match home_state {
                                 HomeState::Image => Scene::ImageProcessing,
                                 HomeState::Video => Scene::VideoProcessing,
                                 HomeState::Audio => Scene::AudioProcessing,
@@ -1105,15 +1253,172 @@ fn main() -> Result<(), io::Error> {
                                 current_scene, Utc::now().format("%H-%M-%S"), video_menu, k.code)?;
                         },
 
-                        //                      <-- IMAGE PROCESSING SCENE KEY EVENTS -->
-                        (Scene::ImageProcessing, KeyCode::Esc) => {
-                            // PLACE THE IMAGE_PROCESSING STATE HERE
-                            current_scene = Scene::Home;
-                            
-                            writeln!(_file, "State: '{:?}' at {} showing {:?} because '{:?}' was pressed.",
-                                current_scene, Utc::now().format("%H-%M-%S"), video_menu, k.code)?;
+                        //                      <-- IMAGE FIELD NAVIGATION KEY EVENTS -->
+                        // Mirrors the audio arms: A/D walk focus across the row, W/S cycle the
+                        // focused field's value (or just walk the row where every field is typed),
+                        // ENTER opens a field for editing or runs ffmpeg.
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Convert => image_convert_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Convert => image_convert_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Convert => {
+                                match image_convert_state.menu.focus_field() {
+                                    ImageConvertField::InputPath | ImageConvertField::OutputPath => image_convert_state.menu.previous(),
+                                    _ => image_convert_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Convert => {
+                                match image_convert_state.menu.focus_field() {
+                                    ImageConvertField::InputPath | ImageConvertField::OutputPath => image_convert_state.menu.next(),
+                                    _ => image_convert_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Convert => {
+                            match image_convert_state.menu.focus_field() {
+                                ImageConvertField::InputPath | ImageConvertField::OutputPath => image_convert_state.menu.editing = true,
+                                ImageConvertField::Run => image_convert_state.start_convert(&filename),
+                                _ => {},
+                            }
                         },
-                        
+
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Resize => image_resize_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Resize => image_resize_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Resize => image_resize_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Resize => image_resize_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Resize => {
+                            match image_resize_state.menu.focus_field() {
+                                ImageResizeField::Run => image_resize_state.start_resize(&filename),
+                                _ => image_resize_state.menu.editing = true,
+                            }
+                        },
+
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Compress => image_compress_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Compress => image_compress_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Compress => {
+                                match image_compress_state.menu.focus_field() {
+                                    ImageCompressField::InputPath | ImageCompressField::OutputPath => image_compress_state.menu.previous(),
+                                    _ => image_compress_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Compress => {
+                                match image_compress_state.menu.focus_field() {
+                                    ImageCompressField::InputPath | ImageCompressField::OutputPath => image_compress_state.menu.next(),
+                                    _ => image_compress_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Compress => {
+                            match image_compress_state.menu.focus_field() {
+                                ImageCompressField::InputPath | ImageCompressField::OutputPath => image_compress_state.menu.editing = true,
+                                ImageCompressField::Run => image_compress_state.start_compress(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Crop => image_crop_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Crop => image_crop_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Crop => image_crop_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Crop => image_crop_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Crop => {
+                            match image_crop_state.menu.focus_field() {
+                                ImageCropField::Run => image_crop_state.start_crop(&filename),
+                                _ => image_crop_state.menu.editing = true,
+                            }
+                        },
+
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Rotate => image_rotate_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Rotate => image_rotate_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Rotate => {
+                                match image_rotate_state.menu.focus_field() {
+                                    ImageRotateField::InputPath | ImageRotateField::OutputPath => image_rotate_state.menu.previous(),
+                                    _ => image_rotate_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Rotate => {
+                                match image_rotate_state.menu.focus_field() {
+                                    ImageRotateField::InputPath | ImageRotateField::OutputPath => image_rotate_state.menu.next(),
+                                    _ => image_rotate_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Rotate => {
+                            match image_rotate_state.menu.focus_field() {
+                                ImageRotateField::InputPath | ImageRotateField::OutputPath => image_rotate_state.menu.editing = true,
+                                ImageRotateField::Run => image_rotate_state.start_rotate(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a'))
+                            if image_state == ImageProcessingState::Filter => image_filter_state.menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d'))
+                            if image_state == ImageProcessingState::Filter => image_filter_state.menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w'))
+                            if image_state == ImageProcessingState::Filter => {
+                                match image_filter_state.menu.focus_field() {
+                                    ImageFilterField::InputPath | ImageFilterField::OutputPath => image_filter_state.menu.previous(),
+                                    _ => image_filter_state.cycle_value(true),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s'))
+                            if image_state == ImageProcessingState::Filter => {
+                                match image_filter_state.menu.focus_field() {
+                                    ImageFilterField::InputPath | ImageFilterField::OutputPath => image_filter_state.menu.next(),
+                                    _ => image_filter_state.cycle_value(false),
+                                }
+                            },
+                        (Scene::ImageProcessing, KeyCode::Enter) if image_state == ImageProcessingState::Filter => {
+                            match image_filter_state.menu.focus_field() {
+                                ImageFilterField::InputPath | ImageFilterField::OutputPath => image_filter_state.menu.editing = true,
+                                ImageFilterField::Run => image_filter_state.start_filter(&filename),
+                                _ => {},
+                            }
+                        },
+
+                        //                      <-- IMAGE PROCESSING SCENE KEY EVENTS -->
+                        // The catch-all arms: these only get reached while no individual image
+                        // screen is open, i.e. while the user is still picking one off the tabs.
+                        (Scene::ImageProcessing, KeyCode::Left) | (Scene::ImageProcessing, KeyCode::Char('a')) => image_menu.previous(),
+                        (Scene::ImageProcessing, KeyCode::Right) | (Scene::ImageProcessing, KeyCode::Char('d')) => image_menu.next(),
+                        (Scene::ImageProcessing, KeyCode::Up) | (Scene::ImageProcessing, KeyCode::Char('w')) => image_menu.above(),
+                        (Scene::ImageProcessing, KeyCode::Down) | (Scene::ImageProcessing, KeyCode::Char('s')) => image_menu.below(),
+                        (Scene::ImageProcessing, KeyCode::Enter) => {
+                            image_state = image_menu.selected_state();
+                            previous_scene = Scene::ImageProcessing;
+
+                            writeln!(_file, "State: '{:?}' at {} showing {:?} because '{:?}' was pressed.",
+                                current_scene, Utc::now().format("%H-%M-%S"), image_menu, k.code)?;
+                        },
+
+                        (Scene::ImageProcessing, KeyCode::Esc) => {
+                            // First ESC backs out of whichever image screen is open, a second
+                            // one leaves the scene entirely, same as Video and Audio.
+                            if image_state != ImageProcessingState::Default {
+                                image_state = ImageProcessingState::Default;
+                            } else {
+                                current_scene = Scene::Home;
+                            }
+
+                            writeln!(_file, "State: '{:?}' at {} showing {:?} because '{:?}' was pressed.",
+                                current_scene, Utc::now().format("%H-%M-%S"), image_menu, k.code)?;
+                        },
+
                         _ => {}
                     }
                 }

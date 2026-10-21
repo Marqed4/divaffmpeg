@@ -22,6 +22,12 @@ pub mod audio_trim_explanation;
 pub mod audio_speed_explanation;
 pub mod audio_fade_explanation;
 pub mod audio_volume_explanation;
+pub mod image_convert_explanation;
+pub mod image_resize_explanation;
+pub mod image_compress_explanation;
+pub mod image_crop_explanation;
+pub mod image_rotate_explanation;
+pub mod image_filter_explanation;
 
 pub use convert_explanation::{
     explain_intro_line_1 as explain_convert_intro_line_1,
@@ -101,4 +107,42 @@ pub use audio_volume_explanation::{
     explain_intro_line_2 as explain_audio_volume_intro_line_2,
     explain_outro_line as explain_audio_volume_outro_line,
     explain_format_list as explain_audio_volume_format_list,
+};
+
+// Image screens use the same scheme, with `image_` kept in the new name.
+pub use image_convert_explanation::{
+    explain_intro_line_1 as explain_image_convert_intro_line_1,
+    explain_intro_line_2 as explain_image_convert_intro_line_2,
+    explain_outro_line as explain_image_convert_outro_line,
+    explain_format_list as explain_image_convert_format_list,
+};
+pub use image_resize_explanation::{
+    explain_intro_line_1 as explain_image_resize_intro_line_1,
+    explain_intro_line_2 as explain_image_resize_intro_line_2,
+    explain_outro_line as explain_image_resize_outro_line,
+    explain_format_list as explain_image_resize_format_list,
+};
+pub use image_compress_explanation::{
+    explain_intro_line_1 as explain_image_compress_intro_line_1,
+    explain_intro_line_2 as explain_image_compress_intro_line_2,
+    explain_outro_line as explain_image_compress_outro_line,
+    explain_format_list as explain_image_compress_format_list,
+};
+pub use image_crop_explanation::{
+    explain_intro_line_1 as explain_image_crop_intro_line_1,
+    explain_intro_line_2 as explain_image_crop_intro_line_2,
+    explain_outro_line as explain_image_crop_outro_line,
+    explain_format_list as explain_image_crop_format_list,
+};
+pub use image_rotate_explanation::{
+    explain_intro_line_1 as explain_image_rotate_intro_line_1,
+    explain_intro_line_2 as explain_image_rotate_intro_line_2,
+    explain_outro_line as explain_image_rotate_outro_line,
+    explain_format_list as explain_image_rotate_format_list,
+};
+pub use image_filter_explanation::{
+    explain_intro_line_1 as explain_image_filter_intro_line_1,
+    explain_intro_line_2 as explain_image_filter_intro_line_2,
+    explain_outro_line as explain_image_filter_outro_line,
+    explain_format_list as explain_image_filter_format_list,
 };
