@@ -17,6 +17,15 @@ pub mod audio_speed;
 pub mod audio_fade;
 pub mod audio_volume;
 
+//                      <-- IMAGE SCREENS -->
+// Same one-file-per-operation shape again, prefixed `image_` for the same reason.
+pub mod image_convert;
+pub mod image_resize;
+pub mod image_compress;
+pub mod image_crop;
+pub mod image_rotate;
+pub mod image_filter;
+
 pub use shared::{FfmpegJob, FieldSet};
 
 pub use convert::{ConvertField, ConvertState};
@@ -32,3 +41,10 @@ pub use audio_trim::{AudioTrimField, AudioTrimState};
 pub use audio_speed::{AudioSpeedField, AudioSpeedState, speed_label, speed_ratio};
 pub use audio_fade::{AudioFadeField, AudioFadeState};
 pub use audio_volume::{AudioVolumeField, AudioVolumeState, gain_label, gain_ratio};
+
+pub use image_convert::{ImageConvertField, ImageConvertState, quality_label, quality_ratio};
+pub use image_resize::{ImageResizeField, ImageResizeState};
+pub use image_compress::{ImageCompressField, ImageCompressState};
+pub use image_crop::{ImageCropField, ImageCropState};
+pub use image_rotate::{ImageRotateField, ImageRotateState};
+pub use image_filter::{ImageFilterField, ImageFilterState, strength_ratio};
