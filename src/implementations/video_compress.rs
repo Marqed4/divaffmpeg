@@ -8,12 +8,12 @@ use super::shared::{
 //                      <-- COMPRESS FIELDS (shrink file size, same container) -->
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompressField { InputPath, OutputPath, Codec, Fps, Crf, Run }
+pub enum VideoCompressField { InputPath, OutputPath, Codec, Fps, Crf, Run }
 
-impl FieldSet for CompressField {
-    const ALL: &'static [CompressField] = &[
-        CompressField::InputPath, CompressField::OutputPath, CompressField::Codec,
-        CompressField::Fps, CompressField::Crf, CompressField::Run,
+impl FieldSet for VideoCompressField {
+    const ALL: &'static [VideoCompressField] = &[
+        VideoCompressField::InputPath, VideoCompressField::OutputPath, VideoCompressField::Codec,
+        VideoCompressField::Fps, VideoCompressField::Crf, VideoCompressField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -25,7 +25,7 @@ impl FieldSet for CompressField {
     }
 }
 
-pub type CompressMenuState = MenuState<CompressField>;
+pub type CompressMenuState = MenuState<VideoCompressField>;
 
 // CRF (Constant Rate Factor) is libx264/libx265's actual quality dial: 0 is
 // near-lossless, 51 is the worst ffmpeg allows. Compress exposes the real
@@ -55,7 +55,7 @@ pub fn crf_ratio(value: u8) -> f64 {
 }
 
 //                      <-- COMPRESS SCREEN STATE (shrink size, same container) -->
-pub struct CompressState {
+pub struct VideoCompressState {
     pub input_file_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
     pub menu: CompressMenuState,
@@ -65,7 +65,7 @@ pub struct CompressState {
     job: Option<FfmpegJob>,
 }
 
-impl CompressState {
+impl VideoCompressState {
     pub fn new() -> Self {
         Self {
             input_file_path: new_path_field("C:/Users/you/video.mov"),
@@ -80,16 +80,16 @@ impl CompressState {
 
     pub fn cycle_value(&mut self, forward: bool) {
         match self.menu.focus_field() {
-            CompressField::Codec => self.codec = cycle(&ConvertCodec::COMPRESS_ALL, self.codec, forward),
-            CompressField::Fps => self.fps = cycle(&ConvertFps::ALL, self.fps, forward),
-            CompressField::Crf => {
+            VideoCompressField::Codec => self.codec = cycle(&ConvertCodec::COMPRESS_ALL, self.codec, forward),
+            VideoCompressField::Fps => self.fps = cycle(&ConvertFps::ALL, self.fps, forward),
+            VideoCompressField::Crf => {
                 self.crf = if forward {
                     (self.crf + CRF_STEP).min(CRF_MAX)
                 } else {
                     self.crf.saturating_sub(CRF_STEP).max(CRF_MIN)
                 };
             },
-            CompressField::InputPath | CompressField::OutputPath | CompressField::Run => {},
+            VideoCompressField::InputPath | VideoCompressField::OutputPath | VideoCompressField::Run => {},
         }
     }
 

@@ -8,13 +8,13 @@ use super::shared::{default_output_path, new_path_field, spawn_ffmpeg_job,
 //                      <-- RESIZE FIELDS (scale to a new width/height, re-encodes) -->
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResizeField { InputPath, OutputPath, Width, Height, Lock, Run }
+pub enum VideoResizeField { InputPath, OutputPath, Width, Height, Lock, Run }
 
-impl FieldSet for ResizeField {
+impl FieldSet for VideoResizeField {
     // Order here is the tab order in the UI.
-    const ALL: &'static [ResizeField] = &[
-        ResizeField::InputPath, ResizeField::OutputPath, ResizeField::Width,
-        ResizeField::Height, ResizeField::Lock, ResizeField::Run,
+    const ALL: &'static [VideoResizeField] = &[
+        VideoResizeField::InputPath, VideoResizeField::OutputPath, VideoResizeField::Width,
+        VideoResizeField::Height, VideoResizeField::Lock, VideoResizeField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -26,11 +26,11 @@ impl FieldSet for ResizeField {
     }
 }
 
-pub type ResizeMenuState = MenuState<ResizeField>;
+pub type ResizeMenuState = MenuState<VideoResizeField>;
 
 //                      <-- RESIZE SCREEN STATE (input, dimensions, export) -->
 
-pub struct ResizeState {
+pub struct VideoResizeState {
     pub input_file_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
     pub width: TextArea<'static>,
@@ -79,7 +79,7 @@ fn round_even(n: f64) -> u32 {
     ((n / 2.0).round() as u32 * 2).max(2)
 }
 
-impl ResizeState {
+impl VideoResizeState {
     pub fn new() -> Self {
         Self {
             input_file_path: new_path_field("C:/Users/you/video.mov"),
@@ -113,7 +113,7 @@ impl ResizeState {
     pub fn toggle_lock(&mut self) {
         self.lock_aspect = !self.lock_aspect;
         if self.lock_aspect {
-            self.apply_lock(ResizeField::Width);
+            self.apply_lock(VideoResizeField::Width);
         }
     }
 
@@ -130,18 +130,18 @@ impl ResizeState {
 
     /// With the lock on, rewrites the other dimension from the one just edited
     /// (pass `Width` or `Height`). Call when editing of that field finishes.
-    pub fn apply_lock(&mut self, edited: ResizeField) {
+    pub fn apply_lock(&mut self, edited: VideoResizeField) {
         if !self.lock_aspect {
             return;
         }
         let Some((src_w, src_h)) = self.source_dims else { return };
         match edited {
-            ResizeField::Width => {
+            VideoResizeField::Width => {
                 let Some(w) = parse_dim(&self.width) else { return };
                 let h = round_even(w as f64 * src_h as f64 / src_w as f64);
                 set_text(&mut self.height, h.to_string());
             }
-            ResizeField::Height => {
+            VideoResizeField::Height => {
                 let Some(h) = parse_dim(&self.height) else { return };
                 let w = round_even(h as f64 * src_w as f64 / src_h as f64);
                 set_text(&mut self.width, w.to_string());

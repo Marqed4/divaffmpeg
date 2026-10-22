@@ -100,13 +100,13 @@ impl ConvertCrf {
 //                      <-- CONVERT FIELDS (format + quality only) -->
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConvertField { InputPath, OutputPath, Format, Codec, Resolution, Fps, Crf, Run }
+pub enum VideoConvertField { InputPath, OutputPath, Format, Codec, Resolution, Fps, Crf, Run }
 
-impl FieldSet for ConvertField {
-    const ALL: &'static [ConvertField] = &[
-        ConvertField::InputPath, ConvertField::OutputPath, ConvertField::Format,
-        ConvertField::Codec, ConvertField::Resolution, ConvertField::Fps,
-        ConvertField::Crf, ConvertField::Run,
+impl FieldSet for VideoConvertField {
+    const ALL: &'static [VideoConvertField] = &[
+        VideoConvertField::InputPath, VideoConvertField::OutputPath, VideoConvertField::Format,
+        VideoConvertField::Codec, VideoConvertField::Resolution, VideoConvertField::Fps,
+        VideoConvertField::Crf, VideoConvertField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -118,10 +118,10 @@ impl FieldSet for ConvertField {
     }
 }
 
-pub type ConvertMenuState = MenuState<ConvertField>;
+pub type ConvertMenuState = MenuState<VideoConvertField>;
 
 //                      <-- CONVERT SCREEN STATE (format + quality only) -->
-pub struct ConvertState {
+pub struct VideoConvertState {
     pub input_file_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
     pub menu: ConvertMenuState,
@@ -133,7 +133,7 @@ pub struct ConvertState {
     job: Option<FfmpegJob>,
 }
 
-impl ConvertState {
+impl VideoConvertState {
     pub fn new() -> Self {
         Self {
             input_file_path: new_path_field("C:/Users/you/video.mov"),
@@ -150,7 +150,7 @@ impl ConvertState {
 
     pub fn cycle_value(&mut self, forward: bool) {
         match self.menu.focus_field() {
-            ConvertField::Format => {
+            VideoConvertField::Format => {
                 self.format = cycle(&ConvertFormat::ALL, self.format, forward);
                 // Drop to a codec the new container can actually mux (e.g. leaving
                 // .webm/.gif) so the picker never lands on a combo ffmpeg will reject.
@@ -159,14 +159,14 @@ impl ConvertState {
                     self.codec = allowed[0];
                 }
             },
-            ConvertField::Codec => {
+            VideoConvertField::Codec => {
                 let allowed = ConvertCodec::allowed_for(self.format);
                 self.codec = cycle(allowed, self.codec, forward);
             },
-            ConvertField::Resolution => self.resolution = cycle(&ConvertResolution::ALL, self.resolution, forward),
-            ConvertField::Fps => self.fps = cycle(&ConvertFps::ALL, self.fps, forward),
-            ConvertField::Crf => self.crf = cycle(&ConvertCrf::ALL, self.crf, forward),
-            ConvertField::InputPath | ConvertField::OutputPath | ConvertField::Run => {},
+            VideoConvertField::Resolution => self.resolution = cycle(&ConvertResolution::ALL, self.resolution, forward),
+            VideoConvertField::Fps => self.fps = cycle(&ConvertFps::ALL, self.fps, forward),
+            VideoConvertField::Crf => self.crf = cycle(&ConvertCrf::ALL, self.crf, forward),
+            VideoConvertField::InputPath | VideoConvertField::OutputPath | VideoConvertField::Run => {},
         }
     }
 

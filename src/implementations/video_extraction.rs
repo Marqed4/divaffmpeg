@@ -33,12 +33,12 @@ impl ExtractionFormat {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtractionField { Input, Start, End, Fps, Format, OutputPath, Run }
+pub enum VideoExtractionField { Input, Start, End, Fps, Format, OutputPath, Run }
 
-impl FieldSet for ExtractionField {
-    const ALL: &'static [ExtractionField] = &[
-        ExtractionField::Input, ExtractionField::OutputPath, ExtractionField::Start,
-        ExtractionField::End, ExtractionField::Format, ExtractionField::Fps, ExtractionField::Run,
+impl FieldSet for VideoExtractionField {
+    const ALL: &'static [VideoExtractionField] = &[
+        VideoExtractionField::Input, VideoExtractionField::OutputPath, VideoExtractionField::Start,
+        VideoExtractionField::End, VideoExtractionField::Format, VideoExtractionField::Fps, VideoExtractionField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -50,11 +50,11 @@ impl FieldSet for ExtractionField {
     }
 }
 
-pub type ExtractionMenuState = MenuState<ExtractionField>;
+pub type ExtractionMenuState = MenuState<VideoExtractionField>;
 
 //                      <-- EXTRACT SCREEN STATE () -->
 
-pub struct ExtractionState {
+pub struct VideoExtractionState {
     pub input_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
     pub start_time: TextArea<'static>,
@@ -72,7 +72,7 @@ pub struct ExtractionState {
 // of the video they provided. Implemented as `sync_duration` below: probes the clip with
 // ffmpeg, sets `end_time` to that length, and `start_extraction` clamps to it so `end_time`
 // can never point past the clip even if the user later types something longer.
-impl ExtractionState {
+impl VideoExtractionState {
     pub fn new() -> Self {
         Self {
             input_path: new_path_field("C:/Users/you/video.mov"),
@@ -103,10 +103,10 @@ impl ExtractionState {
 
     pub fn cycle_value(&mut self, forward: bool) {
         match self.menu.focus_field() {
-            ExtractionField::Fps => self.fps = cycle(&ExtractionFps::ALL, self.fps, forward),
-            ExtractionField::Format => self.format = cycle(&ExtractionFormat::ALL, self.format, forward),
-            ExtractionField::Input | ExtractionField::Start | ExtractionField::End
-                | ExtractionField::OutputPath | ExtractionField::Run => {},
+            VideoExtractionField::Fps => self.fps = cycle(&ExtractionFps::ALL, self.fps, forward),
+            VideoExtractionField::Format => self.format = cycle(&ExtractionFormat::ALL, self.format, forward),
+            VideoExtractionField::Input | VideoExtractionField::Start | VideoExtractionField::End
+                | VideoExtractionField::OutputPath | VideoExtractionField::Run => {},
         }
     }
 

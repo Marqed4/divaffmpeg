@@ -1,10 +1,10 @@
 pub mod shared;
-pub mod convert;
-pub mod compress;
-pub mod trim;
-pub mod merge;
-pub mod extraction;
-pub mod resize;
+pub mod video_convert;
+pub mod video_compress;
+pub mod video_trim;
+pub mod video_merge;
+pub mod video_extraction;
+pub mod video_resize;
 
 //                      <-- AUDIO SCREENS -->
 // Same one-file-per-operation shape as the video screens above. They're prefixed
@@ -28,12 +28,12 @@ pub mod image_filter;
 
 pub use shared::{FfmpegJob, FieldSet};
 
-pub use convert::{ConvertField, ConvertState};
-pub use compress::{CompressField, CompressState, crf_quality_label, crf_ratio};
-pub use trim::{TrimField, TrimState};
-pub use merge::{MergeField, MergeState};
-pub use extraction::{ExtractionField, ExtractionState};
-pub use resize::{ResizeField, ResizeState};
+pub use video_convert::{VideoConvertField, VideoConvertState};
+pub use video_compress::{VideoCompressField, VideoCompressState, crf_quality_label, crf_ratio};
+pub use video_trim::{VideoTrimField, VideoTrimState};
+pub use video_merge::{VideoMergeField, VideoMergeState};
+pub use video_extraction::{VideoExtractionField, VideoExtractionState};
+pub use video_resize::{VideoResizeField, VideoResizeState};
 
 pub use audio_convert::{AudioConvertField, AudioConvertState};
 pub use audio_extract::{AudioExtractField, AudioExtractState};

@@ -6,11 +6,11 @@ use super::shared::{new_path_field, strip_quotes, spawn_ffmpeg_job, FfmpegJob, F
 //                      <-- MERGE FIELDS (stitch two clips together) -->
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MergeField { InputA, InputB, OutputPath, Run }
+pub enum VideoMergeField { InputA, InputB, OutputPath, Run }
 
-impl FieldSet for MergeField {
-    const ALL: &'static [MergeField] = &[
-        MergeField::InputA, MergeField::InputB, MergeField::OutputPath, MergeField::Run,
+impl FieldSet for VideoMergeField {
+    const ALL: &'static [VideoMergeField] = &[
+        VideoMergeField::InputA, VideoMergeField::InputB, VideoMergeField::OutputPath, VideoMergeField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -21,10 +21,10 @@ impl FieldSet for MergeField {
     }
 }
 
-pub type MergeMenuState = MenuState<MergeField>;
+pub type MergeMenuState = MenuState<VideoMergeField>;
 
 //                      <-- MERGE SCREEN STATE (stitch two clips together) -->
-pub struct MergeState {
+pub struct VideoMergeState {
     pub input_a_path: TextArea<'static>,
     pub input_b_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
@@ -32,7 +32,7 @@ pub struct MergeState {
     job: Option<FfmpegJob>,
 }
 
-impl MergeState {
+impl VideoMergeState {
     pub fn new() -> Self {
         Self {
             input_a_path: new_path_field("C:/Users/you/clip_a.mov"),

@@ -12,12 +12,12 @@ use crate::component;
 use crate::styles;
 use crate::implementations::{
     FieldSet, FfmpegJob,
-    ConvertField, ConvertState,
-    CompressField, CompressState, crf_quality_label, crf_ratio,
-    TrimField, TrimState,
-    MergeField, MergeState,
-    ExtractionField, ExtractionState,
-    ResizeField, ResizeState,
+    VideoConvertField, VideoConvertState,
+    VideoCompressField, VideoCompressState, crf_quality_label, crf_ratio,
+    VideoTrimField, VideoTrimState,
+    VideoMergeField, VideoMergeState,
+    VideoExtractionField, VideoExtractionState,
+    VideoResizeField, VideoResizeState,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -276,12 +276,12 @@ pub fn render(
     frame: &mut Frame<'_>,
     state: VideoProcessingState,
     menu: &DirectionsMenuState,
-    convert_state: &mut ConvertState,
-    compress_state: &mut CompressState,
-    trim_state: &mut TrimState,
-    merge_state: &mut MergeState,
-    extraction_state: &mut ExtractionState,
-    resize_state: &mut ResizeState,
+    convert_state: &mut VideoConvertState,
+    compress_state: &mut VideoCompressState,
+    trim_state: &mut VideoTrimState,
+    merge_state: &mut VideoMergeState,
+    extraction_state: &mut VideoExtractionState,
+    resize_state: &mut VideoResizeState,
 ) {
     let size: Rect = frame.area();
 
@@ -418,14 +418,14 @@ pub fn render(
             let focused = convert_state.menu.focus_field();
             let editing = convert_state.menu.editing;
 
-            render_path_field(frame, ConvertField::InputPath, focused, editing, &convert_state.input_file_path, field_area[0]);
-            render_path_field(frame, ConvertField::OutputPath, focused, editing, &convert_state.output_file_path, field_area[1]);
+            render_path_field(frame, VideoConvertField::InputPath, focused, editing, &convert_state.input_file_path, field_area[0]);
+            render_path_field(frame, VideoConvertField::OutputPath, focused, editing, &convert_state.output_file_path, field_area[1]);
 
-            render_value_field(frame, ConvertField::Format, focused, editing, convert_state.format.label(), option_cols[0]);
-            render_value_field(frame, ConvertField::Codec, focused, editing, convert_state.codec.label(), option_cols[1]);
-            render_value_field(frame, ConvertField::Resolution, focused, editing, convert_state.resolution.label(), option_cols[2]);
-            render_value_field(frame, ConvertField::Fps, focused, editing, convert_state.fps.label(), option_cols[3]);
-            render_value_field(frame, ConvertField::Run, focused, editing, ConvertField::Run.label(), option_cols[4]);
+            render_value_field(frame, VideoConvertField::Format, focused, editing, convert_state.format.label(), option_cols[0]);
+            render_value_field(frame, VideoConvertField::Codec, focused, editing, convert_state.codec.label(), option_cols[1]);
+            render_value_field(frame, VideoConvertField::Resolution, focused, editing, convert_state.resolution.label(), option_cols[2]);
+            render_value_field(frame, VideoConvertField::Fps, focused, editing, convert_state.fps.label(), option_cols[3]);
+            render_value_field(frame, VideoConvertField::Run, focused, editing, VideoConvertField::Run.label(), option_cols[4]);
 
             render_progress_gauge(frame, field_area[3], convert_state.job());
         },
@@ -456,11 +456,11 @@ pub fn render(
             ])
             .split(cols[0]);
 
-            frame.render_widget(explanations::explain_convert_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_convert_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_convert_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_convert_format_list(explain_rows[0].width, explain_rows[0].height), explain_rows[0]);
-            frame.render_widget(explanations::explain_convert_codec_list(explain_rows[1].width, explain_rows[1].height), explain_rows[1]);
+            frame.render_widget(explanations::explain_video_convert_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_convert_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_convert_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_convert_format_list(explain_rows[0].width, explain_rows[0].height), explain_rows[0]);
+            frame.render_widget(explanations::explain_video_convert_codec_list(explain_rows[1].width, explain_rows[1].height), explain_rows[1]);
         },
         VideoProcessingState::Compress => {
             compress_state.poll_job();
@@ -521,16 +521,16 @@ pub fn render(
             let focused = compress_state.menu.focus_field();
             let editing = compress_state.menu.editing;
 
-            render_path_field(frame, CompressField::InputPath, focused, editing, &compress_state.input_file_path, field_area[0]);
-            render_path_field(frame, CompressField::OutputPath, focused, editing, &compress_state.output_file_path, field_area[1]);
+            render_path_field(frame, VideoCompressField::InputPath, focused, editing, &compress_state.input_file_path, field_area[0]);
+            render_path_field(frame, VideoCompressField::OutputPath, focused, editing, &compress_state.output_file_path, field_area[1]);
 
-            render_value_field(frame, CompressField::Codec, focused, editing, compress_state.codec.label(), option_cols[0]);
-            render_value_field(frame, CompressField::Fps, focused, editing, compress_state.fps.label(), option_cols[1]);
+            render_value_field(frame, VideoCompressField::Codec, focused, editing, compress_state.codec.label(), option_cols[0]);
+            render_value_field(frame, VideoCompressField::Fps, focused, editing, compress_state.fps.label(), option_cols[1]);
             render_slider_field(
-                frame, CompressField::Crf, focused, editing,
+                frame, VideoCompressField::Crf, focused, editing,
                 crf_ratio(compress_state.crf), format!("CRF {}", compress_state.crf), option_cols[2],
             );
-            render_value_field(frame, CompressField::Run, focused, editing, CompressField::Run.label(), option_cols[3]);
+            render_value_field(frame, VideoCompressField::Run, focused, editing, VideoCompressField::Run.label(), option_cols[3]);
 
             render_progress_gauge(frame, field_area[3], compress_state.job());
         },
@@ -552,10 +552,10 @@ pub fn render(
             ])
             .split(inner[6]);
 
-            frame.render_widget(explanations::explain_compress_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_compress_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_compress_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_compress_format_list(cols[0].width, cols[0].height), cols[0]);
+            frame.render_widget(explanations::explain_video_compress_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_compress_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_compress_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_compress_format_list(cols[0].width, cols[0].height), cols[0]);
         },
         VideoProcessingState::Trim => {
             trim_state.poll_job();
@@ -604,12 +604,12 @@ pub fn render(
             let focused = trim_state.menu.focus_field();
             let editing = trim_state.menu.editing;
 
-            render_path_field(frame, TrimField::InputPath, focused, editing, &trim_state.input_file_path, field_area[0]);
-            render_path_field(frame, TrimField::OutputPath, focused, editing, &trim_state.output_file_path, field_area[1]);
+            render_path_field(frame, VideoTrimField::InputPath, focused, editing, &trim_state.input_file_path, field_area[0]);
+            render_path_field(frame, VideoTrimField::OutputPath, focused, editing, &trim_state.output_file_path, field_area[1]);
 
-            render_path_field(frame, TrimField::Start, focused, editing, &trim_state.start_time, option_cols[0]);
-            render_path_field(frame, TrimField::End, focused, editing, &trim_state.end_time, option_cols[1]);
-            render_value_field(frame, TrimField::Run, focused, editing, TrimField::Run.label(), option_cols[2]);
+            render_path_field(frame, VideoTrimField::Start, focused, editing, &trim_state.start_time, option_cols[0]);
+            render_path_field(frame, VideoTrimField::End, focused, editing, &trim_state.end_time, option_cols[1]);
+            render_value_field(frame, VideoTrimField::Run, focused, editing, VideoTrimField::Run.label(), option_cols[2]);
 
             render_progress_gauge(frame, field_area[3], trim_state.job());
         },
@@ -631,10 +631,10 @@ pub fn render(
             ])
             .split(inner[6]);
 
-            frame.render_widget(explanations::explain_trim_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_trim_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_trim_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_trim_format_list(cols[0].width, cols[0].height), cols[0]);
+            frame.render_widget(explanations::explain_video_trim_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_trim_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_trim_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_trim_format_list(cols[0].width, cols[0].height), cols[0]);
         },
         VideoProcessingState::Merge => {
             merge_state.poll_job();
@@ -682,10 +682,10 @@ pub fn render(
             let focused = merge_state.menu.focus_field();
             let editing = merge_state.menu.editing;
 
-            render_path_field(frame, MergeField::InputA, focused, editing, &merge_state.input_a_path, field_area[0]);
-            render_path_field(frame, MergeField::InputB, focused, editing, &merge_state.input_b_path, field_area[1]);
-            render_path_field(frame, MergeField::OutputPath, focused, editing, &merge_state.output_file_path, option_cols[0]);
-            render_value_field(frame, MergeField::Run, focused, editing, MergeField::Run.label(), option_cols[1]);
+            render_path_field(frame, VideoMergeField::InputA, focused, editing, &merge_state.input_a_path, field_area[0]);
+            render_path_field(frame, VideoMergeField::InputB, focused, editing, &merge_state.input_b_path, field_area[1]);
+            render_path_field(frame, VideoMergeField::OutputPath, focused, editing, &merge_state.output_file_path, option_cols[0]);
+            render_value_field(frame, VideoMergeField::Run, focused, editing, VideoMergeField::Run.label(), option_cols[1]);
 
             render_progress_gauge(frame, field_area[3], merge_state.job());
         },
@@ -707,10 +707,10 @@ pub fn render(
             ])
             .split(inner[6]);
 
-            frame.render_widget(explanations::explain_merge_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_merge_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_merge_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_merge_format_list(cols[0].width, cols[0].height), cols[0]);
+            frame.render_widget(explanations::explain_video_merge_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_merge_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_merge_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_merge_format_list(cols[0].width, cols[0].height), cols[0]);
         },
         VideoProcessingState::Extraction => {
             extraction_state.poll_job();
@@ -761,14 +761,14 @@ pub fn render(
             let focused = extraction_state.menu.focus_field();
             let editing = extraction_state.menu.editing;
 
-            render_path_field(frame, ExtractionField::Input, focused, editing, &extraction_state.input_path, field_area[0]);
-            render_path_field(frame, ExtractionField::OutputPath, focused, editing, &extraction_state.output_file_path, field_area[1]);
+            render_path_field(frame, VideoExtractionField::Input, focused, editing, &extraction_state.input_path, field_area[0]);
+            render_path_field(frame, VideoExtractionField::OutputPath, focused, editing, &extraction_state.output_file_path, field_area[1]);
 
-            render_path_field(frame, ExtractionField::Start, focused, editing, &extraction_state.start_time, option_cols[0]);
-            render_path_field(frame, ExtractionField::End, focused, editing, &extraction_state.end_time, option_cols[1]);
-            render_value_field(frame, ExtractionField::Format, focused, editing, extraction_state.format.label(), option_cols[2]);
-            render_value_field(frame, ExtractionField::Fps, focused, editing, extraction_state.fps.label(), option_cols[3]);
-            render_value_field(frame, ExtractionField::Run, focused, editing, ExtractionField::Run.label(), option_cols[4]);
+            render_path_field(frame, VideoExtractionField::Start, focused, editing, &extraction_state.start_time, option_cols[0]);
+            render_path_field(frame, VideoExtractionField::End, focused, editing, &extraction_state.end_time, option_cols[1]);
+            render_value_field(frame, VideoExtractionField::Format, focused, editing, extraction_state.format.label(), option_cols[2]);
+            render_value_field(frame, VideoExtractionField::Fps, focused, editing, extraction_state.fps.label(), option_cols[3]);
+            render_value_field(frame, VideoExtractionField::Run, focused, editing, VideoExtractionField::Run.label(), option_cols[4]);
 
             render_progress_gauge(frame, field_area[3], extraction_state.job());
         },
@@ -799,11 +799,11 @@ pub fn render(
             ])
             .split(cols[0]);
 
-            frame.render_widget(explanations::explain_extraction_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_extraction_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_extraction_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_extraction_format_list(explain_rows[0].width, explain_rows[0].height), explain_rows[0]);
-            frame.render_widget(explanations::explain_extraction_fps_list(explain_rows[1].width, explain_rows[1].height), explain_rows[1]);
+            frame.render_widget(explanations::explain_video_extraction_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_extraction_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_extraction_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_extraction_format_list(explain_rows[0].width, explain_rows[0].height), explain_rows[0]);
+            frame.render_widget(explanations::explain_video_extraction_fps_list(explain_rows[1].width, explain_rows[1].height), explain_rows[1]);
         },
         VideoProcessingState::Resize => {
             resize_state.poll_job();
@@ -853,13 +853,13 @@ pub fn render(
             let focused = resize_state.menu.focus_field();
             let editing = resize_state.menu.editing;
 
-            render_path_field(frame, ResizeField::InputPath, focused, editing, &resize_state.input_file_path, field_area[0]);
-            render_path_field(frame, ResizeField::OutputPath, focused, editing, &resize_state.output_file_path, field_area[1]);
+            render_path_field(frame, VideoResizeField::InputPath, focused, editing, &resize_state.input_file_path, field_area[0]);
+            render_path_field(frame, VideoResizeField::OutputPath, focused, editing, &resize_state.output_file_path, field_area[1]);
 
-            render_path_field(frame, ResizeField::Width, focused, editing, &resize_state.width, option_cols[0]);
-            render_path_field(frame, ResizeField::Height, focused, editing, &resize_state.height, option_cols[1]);
-            render_value_field(frame, ResizeField::Lock, focused, editing, resize_state.lock_label(), option_cols[2]);
-            render_value_field(frame, ResizeField::Run, focused, editing, ResizeField::Run.label(), option_cols[3]);
+            render_path_field(frame, VideoResizeField::Width, focused, editing, &resize_state.width, option_cols[0]);
+            render_path_field(frame, VideoResizeField::Height, focused, editing, &resize_state.height, option_cols[1]);
+            render_value_field(frame, VideoResizeField::Lock, focused, editing, resize_state.lock_label(), option_cols[2]);
+            render_value_field(frame, VideoResizeField::Run, focused, editing, VideoResizeField::Run.label(), option_cols[3]);
 
             render_progress_gauge(frame, field_area[3], resize_state.job());
         },
@@ -881,10 +881,10 @@ pub fn render(
             ])
             .split(inner[6]);
 
-            frame.render_widget(explanations::explain_resize_intro_line_1(rows[0].width, rows[0].height), rows[0]);
-            frame.render_widget(explanations::explain_resize_intro_line_2(rows[1].width, rows[1].height), rows[1]);
-            frame.render_widget(explanations::explain_resize_outro_line(rows[2].width, rows[2].height), rows[2]);
-            frame.render_widget(explanations::explain_resize_format_list(cols[0].width, cols[0].height), cols[0]);
+            frame.render_widget(explanations::explain_video_resize_intro_line_1(rows[0].width, rows[0].height), rows[0]);
+            frame.render_widget(explanations::explain_video_resize_intro_line_2(rows[1].width, rows[1].height), rows[1]);
+            frame.render_widget(explanations::explain_video_resize_outro_line(rows[2].width, rows[2].height), rows[2]);
+            frame.render_widget(explanations::explain_video_resize_format_list(cols[0].width, cols[0].height), cols[0]);
         },
     }
 

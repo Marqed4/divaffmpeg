@@ -6,11 +6,11 @@ use super::shared::{default_output_path, format_timestamp, new_path_field, parse
 //                      <-- TRIM FIELDS (cut a range, no re-encode) -->
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrimField { InputPath, OutputPath, Start, End, Run }
+pub enum VideoTrimField { InputPath, OutputPath, Start, End, Run }
 
-impl FieldSet for TrimField {
-    const ALL: &'static [TrimField] = &[
-        TrimField::InputPath, TrimField::OutputPath, TrimField::Start, TrimField::End, TrimField::Run,
+impl FieldSet for VideoTrimField {
+    const ALL: &'static [VideoTrimField] = &[
+        VideoTrimField::InputPath, VideoTrimField::OutputPath, VideoTrimField::Start, VideoTrimField::End, VideoTrimField::Run,
     ];
 
     fn label(&self) -> &'static str {
@@ -21,10 +21,10 @@ impl FieldSet for TrimField {
     }
 }
 
-pub type TrimMenuState = MenuState<TrimField>;
+pub type TrimMenuState = MenuState<VideoTrimField>;
 
 //                      <-- TRIM SCREEN STATE (cut a range, no re-encode) -->
-pub struct TrimState {
+pub struct VideoTrimState {
     pub input_file_path: TextArea<'static>,
     pub output_file_path: TextArea<'static>,
     pub start_time: TextArea<'static>,
@@ -40,7 +40,7 @@ pub struct TrimState {
 // of the video they provided. Implemented as `sync_duration` below: probes the clip with
 // ffmpeg, sets `end_time` to that length, and `start_trim` clamps to it so `end_time` can
 // never point past the clip even if the user later types something longer.
-impl TrimState {
+impl VideoTrimState {
     pub fn new() -> Self {
         Self {
             input_file_path: new_path_field("C:/Users/you/video.mov"),

@@ -33,10 +33,10 @@ use video::{VideoProcessingState, DirectionsMenuState, complete_textarea};
 use audio::{AudioProcessingState, AudioDirectionsMenuState};
 use image::{ImageProcessingState, ImageDirectionsMenuState};
 use implementations::{
-    ConvertState, ConvertField, CompressState, CompressField,
-    TrimState, TrimField, MergeState, MergeField,
-    ExtractionState, ExtractionField,
-    ResizeState, ResizeField,
+    VideoConvertState, VideoConvertField, VideoCompressState, VideoCompressField,
+    VideoTrimState, VideoTrimField, VideoMergeState, VideoMergeField,
+    VideoExtractionState, VideoExtractionField,
+    VideoResizeState, VideoResizeField,
     AudioConvertState, AudioConvertField,
     AudioExtractState, AudioExtractField,
     AudioTrimState, AudioTrimField,
@@ -133,12 +133,12 @@ fn main() -> Result<(), io::Error> {
     // Video Processing State
     let mut video_state: VideoProcessingState = VideoProcessingState::Default;
     let mut video_menu: DirectionsMenuState = DirectionsMenuState::new();
-    let mut convert_state: ConvertState = ConvertState::new();
-    let mut compress_state: CompressState = CompressState::new();
-    let mut trim_state: TrimState = TrimState::new();
-    let mut merge_state: MergeState = MergeState::new();
-    let mut extraction_state: ExtractionState = ExtractionState::new();
-    let mut resize_state: ResizeState = ResizeState::new();
+    let mut convert_state: VideoConvertState = VideoConvertState::new();
+    let mut compress_state: VideoCompressState = VideoCompressState::new();
+    let mut trim_state: VideoTrimState = VideoTrimState::new();
+    let mut merge_state: VideoMergeState = VideoMergeState::new();
+    let mut extraction_state: VideoExtractionState = VideoExtractionState::new();
+    let mut resize_state: VideoResizeState = VideoResizeState::new();
 
     // Audio Processing State
     let mut audio_state: AudioProcessingState = AudioProcessingState::Default;
@@ -433,26 +433,26 @@ fn main() -> Result<(), io::Error> {
                             match k.code {
                                 KeyCode::Enter | KeyCode::Esc => {
                                     resize_state.menu.editing = false;
-                                    if resize_state.menu.focus_field() == ResizeField::InputPath {
+                                    if resize_state.menu.focus_field() == VideoResizeField::InputPath {
                                         resize_state.sync_dimensions();
                                     }
                                 },
                                 KeyCode::Tab => {
                                     match resize_state.menu.focus_field() {
-                                        ResizeField::InputPath => {
+                                        VideoResizeField::InputPath => {
                                             complete_textarea(&mut resize_state.input_file_path);
                                             resize_state.sync_dimensions();
                                         },
-                                        ResizeField::OutputPath => complete_textarea(&mut resize_state.output_file_path),
+                                        VideoResizeField::OutputPath => complete_textarea(&mut resize_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
                                     match resize_state.menu.focus_field() {
-                                        ResizeField::InputPath => { resize_state.input_file_path.input(Event::Key(k)); },
-                                        ResizeField::OutputPath => { resize_state.output_file_path.input(Event::Key(k)); },
-                                        ResizeField::Width => { resize_state.width.input(Event::Key(k)); },
-                                        ResizeField::Height => { resize_state.height.input(Event::Key(k)); },
+                                        VideoResizeField::InputPath => { resize_state.input_file_path.input(Event::Key(k)); },
+                                        VideoResizeField::OutputPath => { resize_state.output_file_path.input(Event::Key(k)); },
+                                        VideoResizeField::Width => { resize_state.width.input(Event::Key(k)); },
+                                        VideoResizeField::Height => { resize_state.height.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -466,15 +466,15 @@ fn main() -> Result<(), io::Error> {
                                 KeyCode::Enter | KeyCode::Esc => compress_state.menu.editing = false,
                                 KeyCode::Tab => {
                                     match compress_state.menu.focus_field() {
-                                        CompressField::InputPath => complete_textarea(&mut compress_state.input_file_path),
-                                        CompressField::OutputPath => complete_textarea(&mut compress_state.output_file_path),
+                                        VideoCompressField::InputPath => complete_textarea(&mut compress_state.input_file_path),
+                                        VideoCompressField::OutputPath => complete_textarea(&mut compress_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
                                     match compress_state.menu.focus_field() {
-                                        CompressField::InputPath => { compress_state.input_file_path.input(Event::Key(k)); },
-                                        CompressField::OutputPath => { compress_state.output_file_path.input(Event::Key(k)); },
+                                        VideoCompressField::InputPath => { compress_state.input_file_path.input(Event::Key(k)); },
+                                        VideoCompressField::OutputPath => { compress_state.output_file_path.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -487,23 +487,23 @@ fn main() -> Result<(), io::Error> {
                             match k.code {
                                 KeyCode::Enter | KeyCode::Esc => {
                                     trim_state.menu.editing = false;
-                                    if trim_state.menu.focus_field() == TrimField::InputPath {
+                                    if trim_state.menu.focus_field() == VideoTrimField::InputPath {
                                         trim_state.sync_duration();
                                     }
                                 },
                                 KeyCode::Tab => {
                                     match trim_state.menu.focus_field() {
-                                        TrimField::InputPath => complete_textarea(&mut trim_state.input_file_path),
-                                        TrimField::OutputPath => complete_textarea(&mut trim_state.output_file_path),
+                                        VideoTrimField::InputPath => complete_textarea(&mut trim_state.input_file_path),
+                                        VideoTrimField::OutputPath => complete_textarea(&mut trim_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
                                     match trim_state.menu.focus_field() {
-                                        TrimField::InputPath => { trim_state.input_file_path.input(Event::Key(k)); },
-                                        TrimField::OutputPath => { trim_state.output_file_path.input(Event::Key(k)); },
-                                        TrimField::Start => { trim_state.start_time.input(Event::Key(k)); },
-                                        TrimField::End => { trim_state.end_time.input(Event::Key(k)); },
+                                        VideoTrimField::InputPath => { trim_state.input_file_path.input(Event::Key(k)); },
+                                        VideoTrimField::OutputPath => { trim_state.output_file_path.input(Event::Key(k)); },
+                                        VideoTrimField::Start => { trim_state.start_time.input(Event::Key(k)); },
+                                        VideoTrimField::End => { trim_state.end_time.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -517,17 +517,17 @@ fn main() -> Result<(), io::Error> {
                                 KeyCode::Enter | KeyCode::Esc => merge_state.menu.editing = false,
                                 KeyCode::Tab => {
                                     match merge_state.menu.focus_field() {
-                                        MergeField::InputA => complete_textarea(&mut merge_state.input_a_path),
-                                        MergeField::InputB => complete_textarea(&mut merge_state.input_b_path),
-                                        MergeField::OutputPath => complete_textarea(&mut merge_state.output_file_path),
+                                        VideoMergeField::InputA => complete_textarea(&mut merge_state.input_a_path),
+                                        VideoMergeField::InputB => complete_textarea(&mut merge_state.input_b_path),
+                                        VideoMergeField::OutputPath => complete_textarea(&mut merge_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
                                     match merge_state.menu.focus_field() {
-                                        MergeField::InputA => { merge_state.input_a_path.input(Event::Key(k)); },
-                                        MergeField::InputB => { merge_state.input_b_path.input(Event::Key(k)); },
-                                        MergeField::OutputPath => { merge_state.output_file_path.input(Event::Key(k)); },
+                                        VideoMergeField::InputA => { merge_state.input_a_path.input(Event::Key(k)); },
+                                        VideoMergeField::InputB => { merge_state.input_b_path.input(Event::Key(k)); },
+                                        VideoMergeField::OutputPath => { merge_state.output_file_path.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -540,23 +540,23 @@ fn main() -> Result<(), io::Error> {
                             match k.code {
                                 KeyCode::Enter | KeyCode::Esc => {
                                     extraction_state.menu.editing = false;
-                                    if extraction_state.menu.focus_field() == ExtractionField::Input {
+                                    if extraction_state.menu.focus_field() == VideoExtractionField::Input {
                                         extraction_state.sync_duration();
                                     }
                                 },
                                 KeyCode::Tab => {
                                     match extraction_state.menu.focus_field() {
-                                        ExtractionField::Input => complete_textarea(&mut extraction_state.input_path),
-                                        ExtractionField::OutputPath => complete_textarea(&mut extraction_state.output_file_path),
+                                        VideoExtractionField::Input => complete_textarea(&mut extraction_state.input_path),
+                                        VideoExtractionField::OutputPath => complete_textarea(&mut extraction_state.output_file_path),
                                         _ => {},
                                     }
                                 },
                                 _ => {
                                     match extraction_state.menu.focus_field() {
-                                        ExtractionField::Input => { extraction_state.input_path.input(Event::Key(k)); },
-                                        ExtractionField::OutputPath => { extraction_state.output_file_path.input(Event::Key(k)); },
-                                        ExtractionField::Start => { extraction_state.start_time.input(Event::Key(k)); },
-                                        ExtractionField::End => { extraction_state.end_time.input(Event::Key(k)); },
+                                        VideoExtractionField::Input => { extraction_state.input_path.input(Event::Key(k)); },
+                                        VideoExtractionField::OutputPath => { extraction_state.output_file_path.input(Event::Key(k)); },
+                                        VideoExtractionField::Start => { extraction_state.start_time.input(Event::Key(k)); },
+                                        VideoExtractionField::End => { extraction_state.end_time.input(Event::Key(k)); },
                                         _ => {},
                                     }
                                 },
@@ -1104,21 +1104,21 @@ fn main() -> Result<(), io::Error> {
                         (Scene::VideoProcessing, KeyCode::Up) | (Scene::VideoProcessing, KeyCode::Char('w'))
                             if video_state == VideoProcessingState::Convert => {
                                 match convert_state.menu.focus_field() {
-                                    ConvertField::InputPath | ConvertField::OutputPath => convert_state.menu.previous(),
+                                    VideoConvertField::InputPath | VideoConvertField::OutputPath => convert_state.menu.previous(),
                                     _ => convert_state.cycle_value(true),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Down) | (Scene::VideoProcessing, KeyCode::Char('s'))
                             if video_state == VideoProcessingState::Convert => {
                                 match convert_state.menu.focus_field() {
-                                    ConvertField::InputPath | ConvertField::OutputPath => convert_state.menu.next(),
+                                    VideoConvertField::InputPath | VideoConvertField::OutputPath => convert_state.menu.next(),
                                     _ => convert_state.cycle_value(false),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Convert => {
                             match convert_state.menu.focus_field() {
-                                ConvertField::InputPath | ConvertField::OutputPath => convert_state.menu.editing = true,
-                                ConvertField::Run => convert_state.start_convert(&filename),
+                                VideoConvertField::InputPath | VideoConvertField::OutputPath => convert_state.menu.editing = true,
+                                VideoConvertField::Run => convert_state.start_convert(&filename),
                                 _ => {},
                             }
                         },
@@ -1131,21 +1131,21 @@ fn main() -> Result<(), io::Error> {
                         (Scene::VideoProcessing, KeyCode::Up) | (Scene::VideoProcessing, KeyCode::Char('w'))
                             if video_state == VideoProcessingState::Compress => {
                                 match compress_state.menu.focus_field() {
-                                    CompressField::InputPath | CompressField::OutputPath => compress_state.menu.previous(),
+                                    VideoCompressField::InputPath | VideoCompressField::OutputPath => compress_state.menu.previous(),
                                     _ => compress_state.cycle_value(true),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Down) | (Scene::VideoProcessing, KeyCode::Char('s'))
                             if video_state == VideoProcessingState::Compress => {
                                 match compress_state.menu.focus_field() {
-                                    CompressField::InputPath | CompressField::OutputPath => compress_state.menu.next(),
+                                    VideoCompressField::InputPath | VideoCompressField::OutputPath => compress_state.menu.next(),
                                     _ => compress_state.cycle_value(false),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Compress => {
                             match compress_state.menu.focus_field() {
-                                CompressField::InputPath | CompressField::OutputPath => compress_state.menu.editing = true,
-                                CompressField::Run => compress_state.start_compress(&filename),
+                                VideoCompressField::InputPath | VideoCompressField::OutputPath => compress_state.menu.editing = true,
+                                VideoCompressField::Run => compress_state.start_compress(&filename),
                                 _ => {},
                             }
                         },
@@ -1161,7 +1161,7 @@ fn main() -> Result<(), io::Error> {
                             if video_state == VideoProcessingState::Trim => trim_state.menu.next(),
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Trim => {
                             match trim_state.menu.focus_field() {
-                                TrimField::Run => trim_state.start_trim(&filename),
+                                VideoTrimField::Run => trim_state.start_trim(&filename),
                                 _ => trim_state.menu.editing = true,
                             }
                         },
@@ -1177,7 +1177,7 @@ fn main() -> Result<(), io::Error> {
                             if video_state == VideoProcessingState::Merge => merge_state.menu.next(),
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Merge => {
                             match merge_state.menu.focus_field() {
-                                MergeField::Run => merge_state.start_merge(&filename),
+                                VideoMergeField::Run => merge_state.start_merge(&filename),
                                 _ => merge_state.menu.editing = true,
                             }
                         },
@@ -1190,23 +1190,23 @@ fn main() -> Result<(), io::Error> {
                         (Scene::VideoProcessing, KeyCode::Up) | (Scene::VideoProcessing, KeyCode::Char('w'))
                             if video_state == VideoProcessingState::Extraction => {
                                 match extraction_state.menu.focus_field() {
-                                    ExtractionField::Input | ExtractionField::OutputPath
-                                        | ExtractionField::Start | ExtractionField::End => extraction_state.menu.previous(),
+                                    VideoExtractionField::Input | VideoExtractionField::OutputPath
+                                        | VideoExtractionField::Start | VideoExtractionField::End => extraction_state.menu.previous(),
                                     _ => extraction_state.cycle_value(true),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Down) | (Scene::VideoProcessing, KeyCode::Char('s'))
                             if video_state == VideoProcessingState::Extraction => {
                                 match extraction_state.menu.focus_field() {
-                                    ExtractionField::Input | ExtractionField::OutputPath
-                                        | ExtractionField::Start | ExtractionField::End => extraction_state.menu.next(),
+                                    VideoExtractionField::Input | VideoExtractionField::OutputPath
+                                        | VideoExtractionField::Start | VideoExtractionField::End => extraction_state.menu.next(),
                                     _ => extraction_state.cycle_value(false),
                                 }
                             },
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Extraction => {
                             match extraction_state.menu.focus_field() {
-                                ExtractionField::Input | ExtractionField::OutputPath => extraction_state.menu.editing = true,
-                                ExtractionField::Run => extraction_state.start_extraction(&filename),
+                                VideoExtractionField::Input | VideoExtractionField::OutputPath => extraction_state.menu.editing = true,
+                                VideoExtractionField::Run => extraction_state.start_extraction(&filename),
                                 _ => {},
                             }
                         },
@@ -1222,8 +1222,8 @@ fn main() -> Result<(), io::Error> {
                             if video_state == VideoProcessingState::Resize => resize_state.menu.next(),
                         (Scene::VideoProcessing, KeyCode::Enter) if video_state == VideoProcessingState::Resize => {
                             match resize_state.menu.focus_field() {
-                                ResizeField::Run => resize_state.start_resize(&filename),
-                                ResizeField::Lock => resize_state.toggle_lock(),
+                                VideoResizeField::Run => resize_state.start_resize(&filename),
+                                VideoResizeField::Lock => resize_state.toggle_lock(),
                                 _ => resize_state.menu.editing = true,
                             }
                         },
